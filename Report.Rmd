@@ -1,0 +1,33 @@
+---
+title: "**Predicting Tracheostomy Readmissions**"
+subtitle: |
+  | Aabha Latkar
+  | Febriany Lete  
+  | Maysen Pagan
+  
+output: 
+  bookdown::pdf_document2:
+    toc: false
+    number_sections: true
+    linkcolor: blue
+urlcolor: blue
+---
+
+# Introduction
+
+# Data Preprocessing
+
+# Exploratory Data Analysis
+
+# Methods and Analysis
+
+# Conclusion
+
+\newpage
+# References
+
+\newpage
+# Appendix
+
+
+
