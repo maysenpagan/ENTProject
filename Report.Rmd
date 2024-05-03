@@ -1,33 +1,106 @@
 ---
-title: "**Predicting Tracheostomy Readmissions**"
-subtitle: |
-  | Aabha Latkar
-  | Febriany Lete  
-  | Maysen Pagan
+# Supported options: 
+#   sn-nature:       Style for submissions to Nature Portfolio journals
+#   sn-basic:        Basic Springer Nature Reference Style/Chemistry Reference Style
+#   sn-mathphys:     Math and Physical Sciences Reference Style
+#   sn-aps:          American Physical Society (APS) Reference Style
+#   sn-vancouver:    Vancouver Reference Style
+#   sn-apa:          APA Reference Style 
+#   sn-chicago:      Chicago-based Humanities Reference Style
+#   default:         Default
+
+classoptions: 
+  - sn-basic      
+  # - Numbered      # Optional: Use numbered references instead of namedate references (only for sn-nature, sn-basic, sn-vancouver, sn-chicago, sn-mathphys or sn-nature)
+  # - referee       # Optional: Use double line spacing 
+  # - lineno        # Optional: Add line numbers
+  # - iicol         # Optional: Double column layour
+
+title: |
+  **A Predictive Modeling of Tracheostomy Readmissions**
+
+authors: 
+  - firstname: Aabha
+    lastname: Latkar
+    degrees: BA
+    equalcont: These authors contributed equally to this work.
+    
+  - firstname: Febriany
+    lastname: Lete
+    degrees: SST
+    equalcont: These authors contributed equally to this work.
+    
+  - firstname: Maysen
+    lastname: Pagán
+    degrees: BA
+    equalcont: These authors contributed equally to this work.
+
+affiliations:
+  - info:
+      orgdiv: Master of Science in Statistical Practice
+      orgname: Boston University
   
-output: 
-  bookdown::pdf_document2:
-    toc: false
-    number_sections: true
-    linkcolor: blue
-urlcolor: blue
+
+# Sample for unstructured abstract 
+# abstract: |
+#   The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. Authors are advised to check the author instructions for the journal they are submitting to for word limits and if structural elements like subheadings, citations, or equations are permitted.
+
+# Sample for structured abstract
+abstract: |
+  **Purpose**: The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+
+  **Methods:** The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+
+  **Results:** The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+
+  **Conclusion:** The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.}
+
+bibliography: bibliography.bib
+
+header-includes: |
+  %% Per the spinger doc, new theorem styles can be included using built in style, 
+  %% but it seems the don't work so commented below
+  %\theoremstyle{thmstyleone}%
+  \newtheorem{theorem}{Theorem}%  meant for continuous numbers
+  %%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
+  %% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
+  \newtheorem{proposition}[theorem]{Proposition}%
+  %%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
+
+  %% \theoremstyle{thmstyletwo}%
+  \theoremstyle{remark}
+  \newtheorem{example}{Example}%
+  \newtheorem{remark}{Remark}%
+
+  %% \theoremstyle{thmstylethree}%
+  \theoremstyle{definition}
+  \newtheorem{definition}{Definition}%
+
+output: rticles::springer_article
 ---
 
-# Introduction
-
-# Data Preprocessing
-
-# Exploratory Data Analysis
-
-# Methods and Analysis
-
-# Conclusion
-
-\newpage
-# References
-
-\newpage
-# Appendix
+# Introduction {#sec1}
 
 
 
+# Data Preprocessing {#sec2}
+
+# Exploratory Data Analysis {#sec3}
+
+# Methods and Analysis {#sec4}
+
+# Conclusion {#sec5}
+
+\bmhead{Acknowledgments}
+
+Acknowledgments are not compulsory. Where included they should be brief. Grant or contribution numbers may be acknowledged.
+
+Please refer to Journal-level guidance for any specific requirements.
+
+::: {.appendices latex=true}
+
+# {#secA}
+
+An appendix contains supplementary information that is not an essential part of the text itself but which may be helpful in providing a more comprehensive understanding of the research problem or it is information that is too cumbersome to be included in the body of the paper.
+
+:::

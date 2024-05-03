@@ -1,0 +1,186 @@
+%Version 2.1 April 2023
+% See section 11 of the User Manual for version history
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                 %%
+%% Please do not use \input{...} to include other tex files.       %%
+%% Submit your LaTeX manuscript as one .tex document.              %%
+%%                                                                 %%
+%% All additional figures and files should be attached             %%
+%% separately and not embedded in the \TeX\ document itself.       %%
+%%                                                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[sn-basic,pdflatex]{sn-jnl}
+
+%%%% Standard Packages
+%%<additional latex packages if required can be included here>
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+%%%%
+
+%%%%%=============================================================================%%%%
+%%%%  Remarks: This template is provided to aid authors with the preparation
+%%%%  of original research articles intended for submission to journals published
+%%%%  by Springer Nature. The guidance has been prepared in partnership with
+%%%%  production teams to conform to Springer Nature technical requirements.
+%%%%  Editorial and presentation requirements differ among journal portfolios and
+%%%%  research disciplines. You may find sections in this template are irrelevant
+%%%%  to your work and are empowered to omit any such section if allowed by the
+%%%%  journal you intend to submit to. The submission guidelines and policies
+%%%%  of the journal take precedence. A detailed User Manual is available in the
+%%%%  template package for technical guidance.
+%%%%%=============================================================================%%%%
+
+%% Per the spinger doc, new theorem styles can be included using built in style, 
+%% but it seems the don't work so commented below
+%\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%  meant for continuous numbers
+%%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
+%% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
+\newtheorem{proposition}[theorem]{Proposition}%
+%%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
+
+%% \theoremstyle{thmstyletwo}%
+\theoremstyle{remark}
+\newtheorem{example}{Example}%
+\newtheorem{remark}{Remark}%
+
+%% \theoremstyle{thmstylethree}%
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}%
+
+
+
+\raggedbottom
+
+
+
+
+% tightlist command for lists without linebreak
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+
+
+\begin{document}
+
+
+\title[]{\textbf{A Predictive Modeling of Tracheostomy Readmissions}}
+
+%%=============================================================%%
+%% Prefix	-> \pfx{Dr}
+%% GivenName	-> \fnm{Joergen W.}
+%% Particle	-> \spfx{van der} -> surname prefix
+%% FamilyName	-> \sur{Ploeg}
+%% Suffix	-> \sfx{IV}
+%% NatureName	-> \tanm{Poet Laureate} -> Title after name
+%% Degrees	-> \dgr{MSc, PhD}
+%% \author*[1,2]{\pfx{Dr} \fnm{Joergen W.} \spfx{van der} \sur{Ploeg} \sfx{IV} \tanm{Poet Laureate}
+%%                 \dgr{MSc, PhD}}\email{iauthor@gmail.com}
+%%=============================================================%%
+
+\author[]{\fnm{Aabha} \sur{Latkar} \dgr{BA}}
+
+\author[]{\fnm{Febriany} \sur{Lete} \dgr{SST}}
+
+\author[]{\fnm{Maysen} \sur{Pagán} \dgr{BA}}
+
+
+
+  \affil[]{\orgdiv{Master of Science in Statistical
+Practice}, \orgname{Boston University}}
+
+\abstract{\textbf{Purpose}: The abstract serves both as a general
+introduction to the topic and as a brief, non-technical summary of the
+main results and their implications. The abstract must not include
+subheadings (unless expressly permitted in the journal's Instructions to
+Authors), equations or citations. As a guide the abstract should not
+exceed 200 words. Most journals do not set a hard limit however authors
+are advised to check the author instructions for the journal they are
+submitting to.
+
+\textbf{Methods:} The abstract serves both as a general introduction to
+the topic and as a brief, non-technical summary of the main results and
+their implications. The abstract must not include subheadings (unless
+expressly permitted in the journal's Instructions to Authors), equations
+or citations. As a guide the abstract should not exceed 200 words. Most
+journals do not set a hard limit however authors are advised to check
+the author instructions for the journal they are submitting to.
+
+\textbf{Results:} The abstract serves both as a general introduction to
+the topic and as a brief, non-technical summary of the main results and
+their implications. The abstract must not include subheadings (unless
+expressly permitted in the journal's Instructions to Authors), equations
+or citations. As a guide the abstract should not exceed 200 words. Most
+journals do not set a hard limit however authors are advised to check
+the author instructions for the journal they are submitting to.
+
+\textbf{Conclusion:} The abstract serves both as a general introduction
+to the topic and as a brief, non-technical summary of the main results
+and their implications. The abstract must not include subheadings
+(unless expressly permitted in the journal's Instructions to Authors),
+equations or citations. As a guide the abstract should not exceed 200
+words. Most journals do not set a hard limit however authors are advised
+to check the author instructions for the journal they are submitting
+to.\}}
+
+\keywords{}
+
+
+
+\maketitle
+
+\hypertarget{sec1}{%
+\section{Introduction}\label{sec1}}
+
+\hypertarget{sec2}{%
+\section{Data Preprocessing}\label{sec2}}
+
+\hypertarget{sec3}{%
+\section{Exploratory Data Analysis}\label{sec3}}
+
+\hypertarget{sec4}{%
+\section{Methods and Analysis}\label{sec4}}
+
+\hypertarget{sec5}{%
+\section{Conclusion}\label{sec5}}
+
+\bmhead{Acknowledgments}
+
+Acknowledgments are not compulsory. Where included they should be brief.
+Grant or contribution numbers may be acknowledged.
+
+Please refer to Journal-level guidance for any specific requirements.
+
+\begin{appendices}
+
+\hypertarget{secA}{%
+\section{}\label{secA}}
+
+An appendix contains supplementary information that is not an essential
+part of the text itself but which may be helpful in providing a more
+comprehensive understanding of the research problem or it is information
+that is too cumbersome to be included in the body of the paper.
+
+\end{appendices}
+
+\bibliography{bibliography.bib}
+
+
+\end{document}
