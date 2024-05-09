@@ -1,20 +1,6 @@
 ---
-# Supported options: 
-#   sn-nature:       Style for submissions to Nature Portfolio journals
-#   sn-basic:        Basic Springer Nature Reference Style/Chemistry Reference Style
-#   sn-mathphys:     Math and Physical Sciences Reference Style
-#   sn-aps:          American Physical Society (APS) Reference Style
-#   sn-vancouver:    Vancouver Reference Style
-#   sn-apa:          APA Reference Style 
-#   sn-chicago:      Chicago-based Humanities Reference Style
-#   default:         Default
-
 classoptions: 
   - sn-basic      
-  # - Numbered      # Optional: Use numbered references instead of namedate references (only for sn-nature, sn-basic, sn-vancouver, sn-chicago, sn-mathphys or sn-nature)
-  # - referee       # Optional: Use double line spacing 
-  # - lineno        # Optional: Add line numbers
-  # - iicol         # Optional: Double column layour
 
 title: |
   **A Predictive Modeling of Tracheostomy Readmissions**
@@ -22,7 +8,7 @@ title: |
 authors: 
   - firstname: Aabha
     lastname: Latkar
-    degrees: BA
+    degrees: BSc
     equalcont: These authors contributed equally to this work.
     
   - firstname: Febriany
@@ -40,14 +26,8 @@ affiliations:
       orgdiv: Master of Science in Statistical Practice
       orgname: Boston University
   
-
-# Sample for unstructured abstract 
-# abstract: |
-#   The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. Authors are advised to check the author instructions for the journal they are submitting to for word limits and if structural elements like subheadings, citations, or equations are permitted.
-
-# Sample for structured abstract
 abstract: |
-  Hospital readmissions following the completion of a procedure poses significant challenges for both patients and hospitals. Being readmitted could increase the risk of complications for patients and introduce states of distress. For hospitals, readmissions present a strain on resources and their reputation. This project aims to develop a model that can predict whether a patient will be readmitted within 30 days of being discharged. After thorough data preprocessing and feature extraction, two models were trained on patient data from 2018 and tested on patient data from 2019 to determine predictive performance: a support vector machine (SVM) and a random forest (RF). Using Matthew's Correlation Coefficient to compare models, the RF model had the best performance with a coefficient of HERE while the SVM had a coefficient of HERE. 
+  Hospital readmissions following the completion of a procedure poses significant challenges for both patients and hospitals. Being readmitted could increase the risk of complications for patients and introduce states of distress. For hospitals, readmissions present a strain on resources and their reputation. This project aims to develop a model that can predict whether a patient will be readmitted within 30 days of being discharged. After thorough data preprocessing and feature extraction, two models were trained on patient data from 2018 and tested on patient data from 2019 to determine predictive performance: a support vector machine (SVM) and a random forest (RF). Using Matthew's Correlation Coefficient to compare models, the RF model had the best performance with a coefficient of 0.75 while the SVM had a coefficient of 0.61. From the RF model, Shapley values revealed that the all patient refined diagnosis related group and number of procedures were the features that contributed the most to the model's predictions.
 
 header-includes: |
   %% Per the spinger doc, new theorem styles can be included using built in style, 
@@ -107,45 +87,76 @@ The last step in preparing the data for modeling and analysis was to join the th
 
 # Exploratory Data Analysis {#sec3}
 
-```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Proportion of Readmissions in sample", fig.pos="H"}
-knitr::include_graphics("figures/CIB.png")
-```
-
-We have a class imbalance in our dataset, where the number of instances labeled as '1s' significantly exceeds those labeled as '0s', potentially leading to model biases, poor generalization, and challenges in decision-making during training and evaluation.
-In this specific situation, due to resource constraints and time limitations, we prioritized other aspects of the analysis pipeline that we deemed more critical for achieving our project objectives. However, we acknowledge the importance of addressing this imbalance in future iterations to enhance model robustness and accuracy.
-
-```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Distribution of Patient Ages by Readmission Status after Tracheostomy", fig.pos="H"}
-knitr::include_graphics("figures/AGE.png")
-```
-
-```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Median Ages of Patients by Readmission Status after Tracheostomy ", fig.pos="H"}
-knitr::include_graphics("figures/AGE2.png")
-```
-
-The age distributions indicate a right skew, suggesting that older patients are more inclined to undergo tracheotomies. Notably, the median age for patients with readmissions is slightly lower compared to those without readmission. While the distributions for both groups share similarities, the peak in the distribution for patients with readmissions appears sharper, indicating a more concentrated age group, whereas the distribution for patients without readmission displays a broader spread across different age groups.
-
-```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap="Proportion of Readmission Among APRDRG categories in the sample"", fig.pos="H"}
-knitr::include_graphics("figures/APRDRG.png")
-
-```
-
-In this figure, we observe variations in readmission proportions across different APRDRG categories. AP- refined- DRGs are broader categories of diagnosis that include the severity of the diagnosis as well. Some APRDRG categories exhibit a notably higher proportion of readmissions compared to others within the sample. Consequently, we opted to incorporate APRDRG as a predictor in our analysis to account for this observed variance.
+Looking at Figure\ \ref{fig:CIB} which displays the counts of readmitted and non-readmitted patients, we notice that we have a class imbalance in our data set, where the number of instances labeled as '1's significantly exceeds those labeled as '0's. This may potentially lead to model biases, poor generalization, and challenges in decision-making during training and evaluation. \newline
+\newline
+In this specific situation, due to resource constraints and time limitations, we prioritized other aspects of the analysis pipeline that we deemed more critical for achieving our project objectives. However, we acknowledge the importance of addressing this imbalance in future iterations to enhance model robustness and accuracy.\newline
+\newline
+From Figures\ \ref{fig:AGE} and \ref{fig:AGE2} the age distributions indicate a right skew, suggesting that older patients are more inclined to undergo tracheotomies. Notably, the median age for patients with readmissions is slightly lower compared to those without readmission. While the distributions for both groups share similarities, the peak in the distribution for patients with readmissions appears sharper, indicating a more concentrated age group, whereas the distribution for patients without readmission displays a broader spread across different age groups.\newline
+\newline
+In Figure\ \ref{fig:APRDRG}, we observe variations in readmission proportions across different all patient refined diagnosis related groups (DRG) categories. All patient refined DRGs are broader categories of diagnosis that include the severity of the diagnosis as well. Some all patient refined DRG categories exhibit a notably higher proportion of readmissions compared to others within the sample. Consequently, we opted to incorporate all patient refined DRG as a predictor in our analysis to account for this observed variance.
 
 # Methods and Analysis {#sec4}
 
-## Predictive Model
+In this section, we address and analyze the three objectives of this project.
 
-## Days to Readmission
+## Predictive Models {#sec4A}
 
-Another objective of this project was to explore the number of days until patients were readmitted for those who were readmitted within 30 days. Figure\ \ref{fig:daysto} plots the counts of days to readmission comparing males and females. \newline
+The main objective of this project is to predict whether or not a patient will return to the hospital within 30 days of being discharged from a tracheostomy procedure. This is a classification problem which influences us to apply machine learning classification models. We look at two such models: a support vector machine and a random forest.
 
-```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap="Barplot of proportion of males and proportion of females who were readmitted to a hospital after a specific number of days following discharge.", fig.pos="H"}
+### Comorbidity Analysis {#sec4AA}
+
+Before fitting the two models, we first consider what predictors to include. With over 500 possible diagnosis codes each patient can receive, we choose to select a subset of these codes that we believe would have the largest influence on predicting if a patient would be readmitted. To do this, we first observed the proportion of readmitted patients compared to the proportion of non-readmitted patients who received each comorbidity. Here, comorbidity is defined as any diagnosis code that a patient was diagnosed with at the same visit as their tracheostomy procedure. We plotted these proportions on a bar plot in descending order in hopes of being able to compare the proportions between both groups and determine which codes to include in our model based on the largest differences. This plot can be viewed in Figure\ \ref{fig:props}. \newline
+\newline
+However, with such a large number of unique codes, the proportions are quite small and hard to compare. As a result, we then plotted the difference between the proportions of both groups for each comorbidity. In other words, for each comorbidity we plotted the absolute difference between the proportion of readmitted patients who were diagnosed with that comorbidity and the proportion of non-readmitted patients who were diagnosed with that comorbidity. We then chose a cutoff value of 0.015 which returned 40 comorbidities whose difference in proportions was greater than or equal to 0.015. This plot can be viewed in Figure\ \ref{fig:diffs}. The top two diagnosis codes with the largest difference in proportions for readmitted and non-readmitted patients is Z515 and J9601 which represent encounter for palliative care and acute respiratory failure with hypoxia respectively. \newline
+\newline
+We also included the following variables that we believe to have an association with whether or not a patient is readmitted: age, sex, number of diagnoses, number of procedures, all patient refined DRG, and hospital bed size.
+
+### Support Vector Machine {#sec4AB}
+
+The first model we chose to fit is a support vector machine (SVM) which finds a hyperplane to separate our data into two classes (readmitted and non-readmitted) as well as possible while allowing for some violations to this separation to prevent overfitting. The SVM uses what is called a kernel to quantify the similarity between observations. The most popular kernels are the linear kernel, polynomial kernel, and radial kernel with the polynomial and radial kernels allowing for a more flexible decision boundary. Therefore, on our 2018 training data, we fit three SVMs, one for each kernel using the predictors mentioned in Section\ \ref{sec4AA}. We then plotted the ROC curves to evaluate the performance of each classification model on our 2019 testing data. Figure\ \ref{fig:svm_roc} shows that comparing these three kernels, the linear kernel performs the best with an area under the curve (AUC) of 0.756. Therefore, we continue our analysis with the SVM with linear kernel.
+```{r svm_roc, echo=FALSE, out.width = "80%", fig.pos="H", fig.align = "center", fig.cap = "Plot of the ROC curves for SVMs with linear, polynomial and radial kernels."}
+knitr::include_graphics("figures/svm_roc.png")
+```
+
+Figure\ \ref{fig:svm_conf} below displays the confusion matrix of the SVM with linear kernel model. Due to the imbalanced nature of our data where the readmitted class is larger than the non-readmitted class, the metric of accuracy may be misleading. For example, if 90% of our data belongs to the readmitted class and only 10% belongs to the non-readmitted class, a model that predicts all observations to belong to the readmitted class can achieve 90% accuracy. As a result, to evaluate how well our model correctly predicts observations, we turn to Matthew's Correlation Coefficient (MCC) which takes into account true positives (TP), true negatives (TN), false positives (FP), and false negatives (FN). The MCC of our SVM model is 0.6176 and 
+the formula is: \newline
+\[
+MCC = \frac{(TP*TN) - (FP*FN)}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}
+\]
+```{r svm_conf, echo=FALSE, out.width = "25%", fig.pos="H", fig.align = "center", fig.cap = "Confusion matrix for SVM with linear kernel."}
+knitr::include_graphics("figures/svm_conf.png")
+```
+
+### Random Forest {#sec4AC}
+
+The second model we considered was a Random Forest (RF) model which takes our high dimensional data and aggregates decision trees to improve overall predictive performance. Figure\ \ref{fig:rf_conf} displays the confusion matrix for the RF and the MCC can be calculated to get 0.7489.
+
+```{r rf_conf, echo=FALSE, out.width = "25%", fig.pos="H", fig.align = "center", fig.cap = "Confusion matrix for RF."}
+knitr::include_graphics("figures/rf_conf.png")
+```
+
+We observe that the RF MCC is over 20% larger than the SVM MCC indicating that the RF is the better model in predicting whether or not a patient is readmitted within 30 days of their tracheostomy discharge.
+
+### Feature Importance {#sec4ACA}
+
+From our best model, we wish to determine which features contribute the most to make predictions using Shapley values. Each classification prediction can be broken down into a sum of contributions from each input variable of our RF model. These contributions are the Shapley values. We can observe the mean absolute Shapley value for each feature across all the data to determine each feature's overall contribution towards the prediction. The top 10 features can be view in Figure\ \ref{fig:rf_imp}.
+
+```{r rf_imp, echo=FALSE, out.width = "75%", fig.pos="H", fig.align = "center", fig.cap = "Feature importance plot of RF model showing the mean absolute Shapley values for each predictor."}
+knitr::include_graphics("figures/rf_imp.png")
+```
+
+Features with higher Shapley values are considered more important as they have a greater impact on the model's predictions. From this figure, the all patient refined DRG marginally contributes the most to the RF's predictions followed by the number of procedures the patient received during their tracheostomy visit as well as whether or not the patient received the diagnosis code Z931 for gastrostomy status.
+
+## Days to Readmission {#sec4B}
+
+Another objective of this project was to explore the number of days until patients were readmitted for those who were readmitted within 30 days. Figure\ \ref{fig:daysto} plots the counts of days to readmission comparing males and females. 
+```{r daysto, echo=FALSE, out.width = "90%", fig.align = "center", fig.cap="Barplot of proportion of males and proportion of females who were readmitted to a hospital after a specific number of days following discharge.", fig.pos="H"}
 knitr::include_graphics("figures/daysto.png")
 ```
 
 From this figure, we can see that most readmitted patients return to the hospital within 10 days of being discharged from the tracheostomy. It is interesting to note that while the largest proportion of males are readmitted after 1 day, there is an equal proportion of females who are readmitted after 1 day as well as after 20 days of being discharged.
 
-## Readmitted Diagnoses
+## Readmitted Diagnoses {#sec4C}
 
 We also created a similar figure looking at the most common diagnoses that patients were readmitted with. For those patients who were readmitted within 30 days of their tracheostomy discharge, we calculated the proportion of males and the proportion of females who received a particular diagnosis code at their readmitted visit. We then plotted these proportions and used the proportion cutoff of 0.15 to observe the top 15 most common readmission diagnoses.\newline
 \newline
@@ -155,22 +166,42 @@ The figure also shows that there are 4 common readmission diagnoses that females
 
 # Conclusion {#sec5}
 
+In our study, we conducted extensive data preprocessing which encompassed various tasks such as handling empty diagnosis and procedure cells, creating a binary readmitted response, addressing right censoring, and executing one-hot encoding of diagnoses codes. During exploratory data analysis, we observed that a majority of readmitted patients revisited the hospital within a 30-day window, particularly in the age range of 55-75. We also noticed some all patient refined DRGs will influence the readmitted or non-readmitted prediction. Moving to data analysis, comorbidities were included as predictors. Through the application of SVM and RF algorithms, we determined that a RF yielded better predictions of readmission, as evidenced by the MCC. Further analysis revealed that a considerable portion of readmitted patients returned within 10 days post-discharge, with distinct readmission trends between genders. Notably, the highest proportion of male patients was readmitted within one day, while females also exhibited a peak around day 20. Additionally, we identified prevalent diagnoses among readmitted patients, including essential hypertension and sepsis, alongside gender-specific conditions like anxiety disorder and urinary tract infections. \newline
+\newline
+Future work on this project would first include incorporating the full data set rather than a sample of 3 million. Applying our data preprocessing and models to the full data set would improve the model's generalizability. We could also apply one-hot-encoding to the various procedures that patients received along with their tracheostomy. Conducting a similar analysis like we did with comorbidities would allow us to add binary features for receiving particular procedures to the model. \newline
+\newline
+Comprehending these analyses holds significance for doctors in shaping early intervention strategies, refining patient care, and optimizing resource allocation, particularly concerning the tracheostomy procedure. By understanding the factors influencing these readmission patterns, healthcare professionals can proactively identify at-risk patients, intervene promptly, and tailor treatment plans to mitigate the likelihood of readmission.
+\newpage
 \bmhead{Acknowledgments}
 
-Acknowledgments are not compulsory. Where included they should be brief. Grant or contribution numbers may be acknowledged.
-
-Please refer to Journal-level guidance for any specific requirements.
+We thank Dr. Anand K. Devaiah, Dean Kennedy, and Dr. Jessica R. Levi from the Boston University Chobanian & Avedisian School of Medicine for providing the objectives of this project, access to the data, and assistance with any questions we had throughout the project. We also thank Professor Masanao Yajima from Boston University MSSP for his guidance, support, and feedback throughout this process.
 
 \bmhead{Authors' Contributions}
 
-MP, AL, and FL wrote code for data cleaning, AL wrote code for and conducted exploratory data analysis, MP and AL wrote code for one-hot-encoding, MP conducted comorbidity analysis, FL wrote code for predictive models.
+MP, AL, and FL wrote code for data cleaning, AL wrote code for and conducted exploratory data analysis, MP and AL wrote code for one-hot-encoding, MP conducted comorbidity analysis, FL wrote code for predictive models, MP and AL explored project objectives two and three.
 
 ::: {.appendices latex=true}
 
 # {#secA}
-
-```{r readmit_diags, echo=FALSE, out.width = "100%", fig.pos="H", fig.align = "center", fig.cap = "Barplot of proportion of males and proportion of females who received specific diagnosis codes at their readmission visit."}
+```{r CIB, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Counts of Readmissions in sample of 3 million.", fig.pos="H"}
+knitr::include_graphics("figures/CIB.png")
+```
+```{r AGE, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Distribution of Patient Ages by Readmission Status after Tracheostomy", fig.pos="H"}
+knitr::include_graphics("figures/AGE.png")
+```
+```{r AGE2, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Median Ages of Patients by Readmission Status after Tracheostomy ", fig.pos="H"}
+knitr::include_graphics("figures/AGE2.png")
+```
+```{r APRDRG, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap="Proportion of Readmission Among APRDRG categories in the sample", fig.pos="H"}
+knitr::include_graphics("figures/APRDRG.png")
+```
+```{r readmit_diags, echo=FALSE, out.width = "90%", fig.pos="H", fig.align = "center", fig.cap = "Barplot of proportion of males and proportion of females who received specific diagnosis codes at their readmission visit."}
 knitr::include_graphics("figures/readmit_diags.png")
 ```
-
+```{r props, echo=FALSE, out.width = "100%", fig.pos="H", fig.align = "center", fig.cap = "Barplot of proportion of readmitted patients and proportion of non-readmitted patients who received specific diagnosis codes at their tracheostomy visit."}
+knitr::include_graphics("figures/props.png")
+```
+```{r diffs, echo=FALSE, out.width = "100%", fig.pos="H", fig.align = "center", fig.cap = "Barplot of proportion differences between readmitted patients and non-readmitted patients who received specific diagnosis codes at their tracheostomy visit."}
+knitr::include_graphics("figures/diffs.png")
+```
 :::

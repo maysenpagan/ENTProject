@@ -118,7 +118,9 @@ on patient data from 2019 to determine predictive performance: a support
 vector machine (SVM) and a random forest (RF). Using Matthew's
 Correlation Coefficient to compare models, the RF model had the best
 performance with a coefficient of 0.75 while the SVM had a coefficient
-of 0.61.}
+of 0.61. From the RF model, Shapley values revealed that the all patient
+refined diagnosis related group and number of procedures were the
+features that contributed the most to the model's predictions.}
 
 \keywords{}
 
@@ -173,8 +175,9 @@ the condition for a given admission and the \texttt{hospital} data set
 contains characteristics of the hospital the patient was admitted to
 such as bed size.
 
-\hypertarget{sec2A}{%
-\subsection{Empty Diagnoses and Procedures}\label{sec2A}}
+\hypertarget{empty-diagnoses-and-procedures}{%
+\subsection{Empty Diagnoses and
+Procedures}\label{empty-diagnoses-and-procedures}}
 
 The \texttt{core} data set contains 40 ICD-10-CM diagnosis code columns
 representing 40 possible diagnoses a patient could receive at one
@@ -186,8 +189,9 @@ empty. The first step in preparing the data for analysis was replacing
 these empty cells with \texttt{NA}s which will make future filtering and
 one-hot-encoding steps easier.
 
-\hypertarget{sec2B}{%
-\subsection{Creating Binary Readmitted Response Column}\label{sec2B}}
+\hypertarget{creating-binary-readmitted-response-column}{%
+\subsection{Creating Binary Readmitted Response
+Column}\label{creating-binary-readmitted-response-column}}
 
 The focus of this project is predicting readmissions for tracheostomy
 procedures. Therefore, our next step was to filter the \texttt{core}
@@ -226,8 +230,8 @@ frame where each row represented a unique patient's tracheostomy
 admission along with the binary response variable indicating if they
 were readmitted within 30 days of the procedure.
 
-\hypertarget{sec2C}{%
-\subsection{Right Censoring}\label{sec2C}}
+\hypertarget{right-censoring}{%
+\subsection{Right Censoring}\label{right-censoring}}
 
 Right censored data is used to describe data where subjects leave the
 study before an event occurring or the study ends before the event has
@@ -244,8 +248,8 @@ window of inclusion for patients between January and November of a given
 year by filtering out those patients who were admitted for a
 tracheostomy in December.
 
-\hypertarget{sec2D}{%
-\subsection{One-Hot-Encoding}\label{sec2D}}
+\hypertarget{one-hot-encoding}{%
+\subsection{One-Hot-Encoding}\label{one-hot-encoding}}
 
 When creating the predictive model for readmissions, we wish to conduct
 comorbidity analysis which will allow us to include the presence of
@@ -255,8 +259,8 @@ diagnosis code in the 40 diagnosis columns, we added a column for that
 code which equaled 1 if the patient received the diagnosis on their
 tracheostomy admission and equaled 0 otherwise.
 
-\hypertarget{sec2E}{%
-\subsection{Joining Data Sets}\label{sec2E}}
+\hypertarget{joining-data-sets}{%
+\subsection{Joining Data Sets}\label{joining-data-sets}}
 
 The last step in preparing the data for modeling and analysis was to
 join the three data sets. Each data set had a NRD record identifier
@@ -266,6 +270,34 @@ and \texttt{hospital} data sets by the record identifier.
 
 \hypertarget{sec3}{%
 \section{Exploratory Data Analysis}\label{sec3}}
+
+Looking at Figure~\ref{fig:CIB} which displays the counts of readmitted
+and non-readmitted patients, we notice that we have a class imbalance in
+our data set, where the number of instances labeled as '1's
+significantly exceeds those labeled as '0's. This may potentially lead
+to model biases, poor generalization, and challenges in decision-making
+during training and evaluation. \newline \newline In this specific
+situation, due to resource constraints and time limitations, we
+prioritized other aspects of the analysis pipeline that we deemed more
+critical for achieving our project objectives. However, we acknowledge
+the importance of addressing this imbalance in future iterations to
+enhance model robustness and accuracy.\newline \newline From
+Figures~\ref{fig:AGE} and \ref{fig:AGE2} the age distributions indicate
+a right skew, suggesting that older patients are more inclined to
+undergo tracheotomies. Notably, the median age for patients with
+readmissions is slightly lower compared to those without readmission.
+While the distributions for both groups share similarities, the peak in
+the distribution for patients with readmissions appears sharper,
+indicating a more concentrated age group, whereas the distribution for
+patients without readmission displays a broader spread across different
+age groups.\newline \newline In Figure~\ref{fig:APRDRG}, we observe
+variations in readmission proportions across different all patient
+refined diagnosis related groups (DRG) categories. All patient refined
+DRGs are broader categories of diagnosis that include the severity of
+the diagnosis as well. Some all patient refined DRG categories exhibit a
+notably higher proportion of readmissions compared to others within the
+sample. Consequently, we opted to incorporate all patient refined DRG as
+a predictor in our analysis to account for this observed variance.
 
 \hypertarget{sec4}{%
 \section{Methods and Analysis}\label{sec4}}
@@ -313,8 +345,8 @@ Z515 and J9601 which represent encounter for palliative care and acute
 respiratory failure with hypoxia respectively. \newline \newline We also
 included the following variables that we believe to have an association
 with whether or not a patient is readmitted: age, sex, number of
-diagnoses, number of procedures, all patient refined diagnosis related
-group (DRG), and hospital bed size.
+diagnoses, number of procedures, all patient refined DRG, and hospital
+bed size.
 
 \hypertarget{sec4AB}{%
 \subsubsection{Support Vector Machine}\label{sec4AB}}
@@ -332,11 +364,11 @@ We then plotted the ROC curves to evaluate the performance of each
 classification model on our 2019 testing data. Figure~\ref{fig:svm_roc}
 shows that comparing these three kernels, the linear kernel performs the
 best with an area under the curve (AUC) of 0.756. Therefore, we continue
-our analysis with the SVM with linear kernel. \newline
+our analysis with the SVM with linear kernel.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=1\linewidth]{figures/svm_roc} 
+{\centering \includegraphics[width=0.8\linewidth]{figures/svm_roc} 
 
 }
 
@@ -359,7 +391,7 @@ MCC = \frac{(TP*TN) - (FP*FN)}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=0.3\linewidth]{figures/svm_conf} 
+{\centering \includegraphics[width=0.25\linewidth]{figures/svm_conf} 
 
 }
 
@@ -376,7 +408,7 @@ confusion matrix for the RF and the MCC can be calculated to get 0.7489.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=0.3\linewidth]{figures/rf_conf} 
+{\centering \includegraphics[width=0.25\linewidth]{figures/rf_conf} 
 
 }
 
@@ -397,11 +429,11 @@ input variable of our RF model. These contributions are the Shapley
 values. We can observe the mean absolute Shapley value for each feature
 across all the data to determine each feature's overall contribution
 towards the prediction. The top 10 features can be view in
-Figure~\ref{fig:rf_imp}
+Figure~\ref{fig:rf_imp}.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=1\linewidth]{figures/rf_imp} 
+{\centering \includegraphics[width=0.75\linewidth]{figures/rf_imp} 
 
 }
 
@@ -421,11 +453,11 @@ received the diagnosis code Z931 for gastrostomy status.
 Another objective of this project was to explore the number of days
 until patients were readmitted for those who were readmitted within 30
 days. Figure~\ref{fig:daysto} plots the counts of days to readmission
-comparing males and females. \newline
+comparing males and females.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=1\linewidth]{figures/daysto} 
+{\centering \includegraphics[width=0.9\linewidth]{figures/daysto} 
 
 }
 
@@ -465,7 +497,39 @@ representing unspecified severe protein-calorie malnutrition.
 \hypertarget{sec5}{%
 \section{Conclusion}\label{sec5}}
 
-\bmhead{Acknowledgments}
+In our study, we conducted extensive data preprocessing which
+encompassed various tasks such as handling empty diagnosis and procedure
+cells, creating a binary readmitted response, addressing right
+censoring, and executing one-hot encoding of diagnoses codes. During
+exploratory data analysis, we observed that a majority of readmitted
+patients revisited the hospital within a 30-day window, particularly in
+the age range of 55-75. We also noticed some all patient refined DRGs
+will influence the readmitted or non-readmitted prediction. Moving to
+data analysis, comorbidities were included as predictors. Through the
+application of SVM and RF algorithms, we determined that a RF yielded
+better predictions of readmission, as evidenced by the MCC. Further
+analysis revealed that a considerable portion of readmitted patients
+returned within 10 days post-discharge, with distinct readmission trends
+between genders. Notably, the highest proportion of male patients was
+readmitted within one day, while females also exhibited a peak around
+day 20. Additionally, we identified prevalent diagnoses among readmitted
+patients, including essential hypertension and sepsis, alongside
+gender-specific conditions like anxiety disorder and urinary tract
+infections. \newline \newline Future work on this project would first
+include incorporating the full data set rather than a sample of 3
+million. Applying our data preprocessing and models to the full data set
+would improve the model's generalizability. We could also apply
+one-hot-encoding to the various procedures that patients received along
+with their tracheostomy. Conducting a similar analysis like we did with
+comorbidities would allow us to add binary features for receiving
+particular procedures to the model. \newline \newline Comprehending
+these analyses holds significance for doctors in shaping early
+intervention strategies, refining patient care, and optimizing resource
+allocation, particularly concerning the tracheostomy procedure. By
+understanding the factors influencing these readmission patterns,
+healthcare professionals can proactively identify at-risk patients,
+intervene promptly, and tailor treatment plans to mitigate the
+likelihood of readmission. \newpage \bmhead{Acknowledgments}
 
 We thank Dr.~Anand K. Devaiah, Dean Kennedy, and Dr.~Jessica R. Levi
 from the Boston University Chobanian \& Avedisian School of Medicine for
@@ -474,11 +538,50 @@ assistance with any questions we had throughout the project. We also
 thank Professor Masanao Yajima from Boston University MSSP for his
 guidance, support, and feedback throughout this process.
 
+\bmhead{Authors' Contributions}
+
+MP, AL, and FL wrote code for data cleaning, AL wrote code for and
+conducted exploratory data analysis, MP and AL wrote code for
+one-hot-encoding, MP conducted comorbidity analysis, FL wrote code for
+predictive models, MP and AL explored project objectives two and three.
+
 \begin{appendices}
 
 \hypertarget{secA}{%
 \section{}\label{secA}}
 
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/CIB} 
+
+}
+
+\caption{ Counts of Readmissions in sample of 3 million.}\label{fig:CIB}
+\end{figure}
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/AGE} 
+
+}
+
+\caption{ Distribution of Patient Ages by Readmission Status after Tracheostomy}\label{fig:AGE}
+\end{figure}
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/AGE2} 
+
+}
+
+\caption{ Median Ages of Patients by Readmission Status after Tracheostomy }\label{fig:AGE2}
+\end{figure}
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/APRDRG} 
+
+}
+
+\caption{Proportion of Readmission Among APRDRG categories in the sample}\label{fig:APRDRG}
+\end{figure}
 \begin{figure}[H]
 
 {\centering \includegraphics[width=0.9\linewidth]{figures/readmit_diags} 
@@ -487,7 +590,6 @@ guidance, support, and feedback throughout this process.
 
 \caption{Barplot of proportion of males and proportion of females who received specific diagnosis codes at their readmission visit.}\label{fig:readmit_diags}
 \end{figure}
-
 \begin{figure}[H]
 
 {\centering \includegraphics[width=1\linewidth]{figures/props} 
@@ -496,7 +598,6 @@ guidance, support, and feedback throughout this process.
 
 \caption{Barplot of proportion of readmitted patients and proportion of non-readmitted patients who received specific diagnosis codes at their tracheostomy visit.}\label{fig:props}
 \end{figure}
-
 \begin{figure}[H]
 
 {\centering \includegraphics[width=1\linewidth]{figures/diffs} 
@@ -508,7 +609,6 @@ guidance, support, and feedback throughout this process.
 
 \end{appendices}
 
-\bibliography{bibliography.bib}
 
 
 \end{document}
