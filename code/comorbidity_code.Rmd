@@ -1,0 +1,378 @@
+---
+title: "Code for Comorbidity Analysis and Objectives 2 and 3"
+output: pdf_document
+date: "2024-04-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(data.table)
+library(tidyverse)
+library(caret)
+library(plyr)
+```
+
+```{r}
+
+# import 2018 hospital, core, diagnoses, and severity data -------------------------------------------------------------
+ 
+# Hospital
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_Hospital.TXT'"
+output <- trimws(system(command, intern = TRUE))
+print(output)
+ 
+hospital18 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_Hospital.CSV', col.names = output)
+ 
+# Core
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_Core.TXT'"
+output <- trimws(system(command, intern = TRUE))
+print(output)
+core18 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_Core.CSV', nrows = 3000000, col.names = output)
+ 
+# Diagnosis and Procedure Groups File (DPGF)
+ 
+# command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_DX_PR_GRPS.TXT'"
+# output <- trimws(system(command, intern = TRUE))
+# print(output)
+#  
+# dpgf18 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_DX_PR_GRPS.CSV', nrows = 1000000, col.names = output)
+ 
+# severity
+ 
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_Severity.TXT'"
+output <- trimws(system(command, intern = TRUE))
+#  
+severity18 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_Severity.CSV',  col.names = output)
+```
+
+```{r}
+
+# # import 2019 hospital, core, diagnoses, and severity data -------------------------------------------------------------
+#  
+# # Hospital
+# command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_Hospital.TXT'"
+# output <- trimws(system(command, intern = TRUE))
+# print(output)
+#  
+# hospital19 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_Hospital.CSV', col.names = output)
+#  
+# # Core
+# command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_Core.TXT'"
+# output <- trimws(system(command, intern = TRUE))
+# print(output)
+# core19 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_Core.CSV', nrows = 5000000, col.names = output)
+#  
+# # Diagnosis and Procedure Groups File (DPGF)
+#  
+# # command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_DX_PR_GRPS.TXT'"
+# # output <- trimws(system(command, intern = TRUE))
+# # print(output)
+# #  
+# # dpgf19 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_DX_PR_GRPS.CSV', nrows = 1000000, col.names = output)
+#  
+# # severity
+#  
+# # command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_Severity.TXT'"
+# # output <- trimws(system(command, intern = TRUE))
+# # print(output)
+# #  
+# # severity19 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_Severity.CSV',  col.names = output)
+```
+
+```{r}
+# replace empty cells with NAs
+core18[,11:50] <- lapply(core18[,11:50], function(x) gsub("^$|^ $", "NA", x))
+core18[,66:90] <- lapply(core18[,66:90], function(x) gsub("^$|^ $", "NA", x))
+core18 <- as.data.frame(core18)
+# no columns with all NAs
+# apply(core, 2, function(x) all(is.na(x)))
+
+```
+
+```{r}
+#filter to get people who visited for tracheostomy
+
+#data frame of admissions to hospital for tracheostomy
+trach_visits <- core18 %>% filter(
+  apply(
+    core18[66:90],
+    1,
+    function(x) any(substr(x, 1, 4) == "0B11")
+  )
+)
+
+#unique visit links of individuals who were admitted for tracheostomy
+ids <- unique(trach_visits$NRD_VisitLink)
+
+#new data set that contains people who were admitted for tracheostomy and all other visits by that person
+trach <- core18 %>% filter(NRD_VisitLink %in% ids)
+
+#add binary column that is one if admission was for tracheostomy
+trach$tracheostomy <- ifelse(apply(trach[66:90],
+                                   1,
+                                   function(x) any(substr(x, 1, 4) == "0B11")
+                                   ), 1, 0)
+
+#for people who got tracheostomy, add LOS to NRD days to event (this gets us discharge date)
+trach$NRD_DaysToEvent <- as.numeric(trach$NRD_DaysToEvent)
+trach$NRD_DaysToEvent <- ifelse(trach$tracheostomy==1, trach$NRD_DaysToEvent+trach$LOS, trach$NRD_DaysToEvent)
+
+all <- trach %>% group_by(NRD_VisitLink) %>% arrange(NRD_DaysToEvent)
+
+#function that for each unique person, gets the admissions that occurred after first tracheostomy
+complete <- data.frame()
+start.time <- Sys.time()
+for (i in ids){
+  subset <- all %>% filter(NRD_VisitLink==i)
+  new <- subset[min(which(subset$tracheostomy==1)):nrow(subset),]
+  complete <- rbind(complete, new)
+}
+end.time <- Sys.time()
+end.time-start.time
+```
+
+```{r}
+#READMISSION COLUMN
+# Sort the dataframe by NRD_VisitLink and then by NRD_DaysToEvent within each NRD_VisitLink
+test <- complete
+ 
+# Create a new column to store the result (1 if condition met, 0 otherwise)
+test$readmitted <- 0
+test$days_to_readmit <- 0
+ 
+# Iterate over unique NRD_VisitLink values
+for (link in ids) {
+  # Subset dataframe for the current NRD_VisitLink
+  subset_test <- test[test$NRD_VisitLink == link, ]
+  # Check if there are multiple rows for the current NRD_VisitLink
+  if (nrow(subset_test) > 1) {
+    # Check if the condition is met for the second row
+    if ((subset_test$NRD_DaysToEvent[2] - subset_test$NRD_DaysToEvent[1]) <= 30) {
+      # If condition is met, mark the first row as 1
+      test$readmitted[which(test$NRD_VisitLink == link)[1]] <- 1
+      test$days_to_readmit[which(test$NRD_VisitLink == link)[1]] <- subset_test$NRD_DaysToEvent[2] - subset_test$NRD_DaysToEvent[1]
+      # Delete all other rows
+      test <- test[-which(test$NRD_VisitLink == link)[-1], ]
+    } else {
+      # If condition is not met, mark the first row as 0
+      test$readmitted[which(test$NRD_VisitLink == link)[1]] <- 0
+      # Delete all rows except the first
+      test <- test[-which(test$NRD_VisitLink == link)[-1], ]
+    }
+  } else {
+    # If there's only one row for the current NRD_VisitLink, mark it as 0
+    test$readmitted[which(test$NRD_VisitLink == link)] <- 0
+  }
+}
+```
+
+```{r}
+#solving right censoring
+# get rid of people who got a tracheostomy in December
+data <- test %>% filter(DMONTH!=12)
+```
+
+```{r}
+#join hospital and severity data sets
+data <- left_join(data, severity18[,-4], by = "KEY_NRD")
+data <- left_join(data, hospital18[,-c(6,12)], by = "HOSP_NRD")
+```
+
+#One hot encoding of ICD diagnosis codes
+
+```{r}
+samp <- data[,11:50] %>% pivot_longer(cols = everything(), names_to = "I10_DX", values_to = "Values")
+samp$person <- rep(data$NRD_VisitLink, each = 40)
+dummy <- dummyVars(" ~ Values", data=samp)
+first <- data.frame(predict(dummy, newdata = samp)) 
+first$person <- rep(1:nrow(data), each = 40)
+encoded <- first %>% group_by(person) %>% summarize_all(sum)
+encoded <- encoded[, !names(encoded) %in% "ValuesNA"]
+encoded$person <- data$NRD_VisitLink
+colnames(encoded)[1] <- "NRD_VisitLink"
+data <- left_join(data, encoded, by = "NRD_VisitLink")
+```
+
+```{r}
+cat("The number of readmissions within 30 days is", sum(data$readmitted==1), "\n")
+cat("The number of readmissions within 30 days is", sum(data$readmitted==0))
+```
+
+#EDA
+```{r}
+data %>% ggplot(aes(AGE, fill = factor(readmitted))) +
+  geom_bar()
+```
+# Comorbidity analysis
+```{r}
+#proportions of diagnoses
+diag_props <- data %>% 
+   group_by(readmitted) %>% 
+       dplyr::summarise(total = n(), 
+            across(starts_with('Values'), ~ mean(. == 1)))
+diag_props <- pivot_longer(diag_props, cols = starts_with('Values'), names_to = "Code", values_to = "Prop")
+
+diag_props %>% ggplot(aes(x=reorder(Code, -Prop), Prop, fill = as.factor(readmitted))) +
+  geom_bar(stat="identity", position = "dodge") +
+  labs(x = "ICD 10 CM Code",
+       y = "Proportion",
+       title = "ICD 10 Code Proportions") +
+  scale_fill_manual("Readmitted", values=c("cornflowerblue", "brown3")) + 
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+diag_props %>% filter(Prop>=0.07) %>% 
+  ggplot(aes(x=reorder(Code, -Prop), Prop, fill = as.factor(readmitted))) +
+  geom_bar(stat="identity")
+
+diag_props$Code <- str_replace(diag_props$Code, "Values", "")
+diag_props %>% group_by(Code) %>% 
+  reframe(diff = abs(diff(Prop))) %>% 
+  filter(diff>=0.015 & diff<0.055) %>% 
+  ggplot(aes(x=reorder(Code, -diff), diff)) + 
+  geom_bar(stat = "identity", color = "black", fill = "grey") + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) + 
+  labs(x = "ICD 10 CM Code",
+       y = "Difference",
+       title = "Difference in Proportions of Diagnoses Between Readmitted and Non-readmitted Patients")
+```
+#Question 2 (days until readmission)
+```{r}
+#plot of days to readmission grouped by males and females
+#proportion of males and proportion of females
+
+days <- test %>% filter(days_to_readmit>0)
+days_male <- days %>% filter(FEMALE==0)
+days_female <- days %>% filter(FEMALE==1)
+#male
+prop_m <- days_male %>% 
+  group_by(days_to_readmit) %>% 
+  dplyr::summarize(count = n()) %>%
+  mutate(proportion = count / sum(count))
+#female
+prop_f <- days_female %>% 
+  group_by(days_to_readmit) %>% 
+  dplyr::summarize(count = n()) %>%
+  mutate(proportion = count / sum(count))
+#join
+df <- rbind(prop_m, prop_f)
+df$Sex <- rep(c("Male", "Female"), each = 30)
+
+df %>% 
+  ggplot(aes(x = days_to_readmit, y = proportion, color = as.factor(Sex), fill = as.factor(Sex))) +
+  geom_bar(position = position_dodge2(width = 1, preserve = "single"), alpha = 0.5, stat = "identity") +
+  theme_bw() +
+  labs(x = "Days to Readmission",
+       y = "Proportion of Readmitted") +
+  scale_color_manual("Sex", values=c("brown3", "cornflowerblue"), labels = c("Female", "Male")) +
+  scale_fill_manual("Sex", values=c("brown3", "cornflowerblue"), labels = c("Female", "Male")) +
+  theme(axis.title = element_text(size = 13),
+        axis.text = element_text(size = 12),
+        title = element_text(size = 14),
+        legend.text = element_text(size = 12))
+```
+
+# Question 3
+```{r}
+#complete is data set of people who got tracheostomy and all visits after
+
+#READMISSION COLUMN
+#BUT NOW KEEPING READMISSION ROW TO GET DIAGNOSES AT READMISSION
+# Sort the dataframe by NRD_VisitLink and then by NRD_DaysToEvent within each NRD_VisitLink
+test2 <- complete
+ 
+# Create a new column to store the result (1 if condition met, 0 otherwise)
+test2$readmitted <- 0
+test2$days_to_readmit <- 0
+ 
+# Iterate over unique NRD_VisitLink values
+for (link in ids) {
+  # Subset dataframe for the current NRD_VisitLink
+  subset_test <- test2[test2$NRD_VisitLink == link, ]
+  # Check if there are multiple rows for the current NRD_VisitLink
+  if (nrow(subset_test) > 1) {
+    # Check if the condition is met for the second row
+    if ((subset_test$NRD_DaysToEvent[2] - subset_test$NRD_DaysToEvent[1]) <= 30) {
+      # If condition is met, mark the first row as 1
+      test2$readmitted[which(test2$NRD_VisitLink == link)[1]] <- 1
+      test2$days_to_readmit[which(test2$NRD_VisitLink == link)[1]] <- subset_test$NRD_DaysToEvent[2] - subset_test$NRD_DaysToEvent[1]
+      # Delete all other rows except first and second row (tracheostomy visit and first readmission)
+      if(nrow(subset_test)>2){
+        delete <- which(test2$NRD_VisitLink == link)[-c(1,2)]
+        test2 <- test2[-delete, ]
+      }
+    } else {
+      # If condition is not met, mark the first row as 0
+      test2$readmitted[which(test2$NRD_VisitLink == link)[1]] <- 0
+      # Delete all rows except the first
+      test2 <- test2[-which(test2$NRD_VisitLink == link)[-1], ]
+    }
+  } else {
+    # If there's only one row for the current NRD_VisitLink, mark it as 0
+    test2$readmitted[which(test2$NRD_VisitLink == link)] <- 0
+  }
+}
+
+test2 <- test2 %>% filter(DMONTH!=12)
+
+#one hot encoding of diagnoses
+samp2 <- test2[,11:50] %>% pivot_longer(cols = everything(), names_to = "I10_DX", values_to = "Values")
+samp2$person <- rep(test2$NRD_VisitLink, each = 40)
+dummy <- dummyVars(" ~ Values", data=samp2)
+first <- data.frame(predict(dummy, newdata = samp2)) 
+first$person <- rep(1:nrow(test2), each = 40)
+encoded <- first %>% group_by(person) %>% summarize_all(sum)
+encoded <- encoded[, !names(encoded) %in% "ValuesNA"]
+encoded$person <- test2$KEY_NRD
+colnames(encoded)[1] <- "KEY_NRD"
+test2 <- left_join(test2, encoded, by = "KEY_NRD")
+
+#ICD10 Codes
+test2 <- test2 %>% filter(tracheostomy==0)
+test2_male <- test2 %>% filter(FEMALE==0)
+test2_female <- test2 %>% filter(FEMALE==1)
+#male
+prop_m <- data.frame(apply(test2_male[,125:5472], 2, sum))
+prop_m <- tibble::rownames_to_column(prop_m, "Code")
+colnames(prop_m)[2] <- "prop"
+prop_m$prop <- (prop_m$prop)/nrow(test2_male)
+#female
+prop_f <- data.frame(apply(test2_female[,125:5472], 2, sum))
+prop_f <- tibble::rownames_to_column(prop_f, "Code")
+colnames(prop_f)[2] <- "prop"
+prop_f$prop <- (prop_f$prop)/nrow(test2_female)
+#join
+df <- rbind(prop_m, prop_f)
+df$Sex <- rep(c("Male", "Female"), each = 5348)
+
+#ICD10 Codes
+df$Code <- str_replace(df$Code, "Values", "")
+df %>% filter(prop>0.15) %>% 
+  ggplot(aes(x=reorder(Code, -prop), prop, color = as.factor(Sex), fill = as.factor(Sex))) +
+  geom_col(position = position_dodge2(width = 1, preserve = "single"), alpha = 0.5) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.2),
+        axis.title = element_text(size = 13),
+        axis.text = element_text(size = 10),
+        title = element_text(size = 14),
+        legend.text = element_text(size = 12)) +
+  scale_color_manual("Sex", values=c("brown3", "cornflowerblue"), labels = c("Female", "Male")) +
+  scale_fill_manual("Sex", values=c("brown3", "cornflowerblue"), labels = c("Female", "Male")) +
+  labs(x = "ICD 10 CM Code", 
+       y = "Proportion of Readmitted")
+
+
+
+#DRG Categories
+drg_freq <- test2 %>% group_by(FEMALE) %>% 
+  dplyr::mutate(total = n()) %>% 
+  ungroup() %>% 
+  group_by(FEMALE, as.factor(DRG)) %>% 
+  dplyr::reframe(n()/total)
+colnames(drg_freq) <- c("FEMALE", "DRG", "Frequency")
+
+```
