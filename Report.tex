@@ -95,7 +95,7 @@
 %%                 \dgr{MSc, PhD}}\email{iauthor@gmail.com}
 %%=============================================================%%
 
-\author[]{\fnm{Aabha} \sur{Latkar} \dgr{BA}}
+\author[]{\fnm{Aabha} \sur{Latkar} \dgr{BSc}}
 
 \author[]{\fnm{Febriany} \sur{Lete} \dgr{SST}}
 
@@ -117,8 +117,8 @@ extraction, two models were trained on patient data from 2018 and tested
 on patient data from 2019 to determine predictive performance: a support
 vector machine (SVM) and a random forest (RF). Using Matthew's
 Correlation Coefficient to compare models, the RF model had the best
-performance with a coefficient of HERE while the SVM had a coefficient
-of HERE.}
+performance with a coefficient of 0.75 while the SVM had a coefficient
+of 0.61.}
 
 \keywords{}
 
@@ -173,9 +173,8 @@ the condition for a given admission and the \texttt{hospital} data set
 contains characteristics of the hospital the patient was admitted to
 such as bed size.
 
-\hypertarget{empty-diagnoses-and-procedures}{%
-\subsection{Empty Diagnoses and
-Procedures}\label{empty-diagnoses-and-procedures}}
+\hypertarget{sec2A}{%
+\subsection{Empty Diagnoses and Procedures}\label{sec2A}}
 
 The \texttt{core} data set contains 40 ICD-10-CM diagnosis code columns
 representing 40 possible diagnoses a patient could receive at one
@@ -187,9 +186,8 @@ empty. The first step in preparing the data for analysis was replacing
 these empty cells with \texttt{NA}s which will make future filtering and
 one-hot-encoding steps easier.
 
-\hypertarget{creating-binary-readmitted-response-column}{%
-\subsection{Creating Binary Readmitted Response
-Column}\label{creating-binary-readmitted-response-column}}
+\hypertarget{sec2B}{%
+\subsection{Creating Binary Readmitted Response Column}\label{sec2B}}
 
 The focus of this project is predicting readmissions for tracheostomy
 procedures. Therefore, our next step was to filter the \texttt{core}
@@ -228,8 +226,8 @@ frame where each row represented a unique patient's tracheostomy
 admission along with the binary response variable indicating if they
 were readmitted within 30 days of the procedure.
 
-\hypertarget{right-censoring}{%
-\subsection{Right Censoring}\label{right-censoring}}
+\hypertarget{sec2C}{%
+\subsection{Right Censoring}\label{sec2C}}
 
 Right censored data is used to describe data where subjects leave the
 study before an event occurring or the study ends before the event has
@@ -246,8 +244,8 @@ window of inclusion for patients between January and November of a given
 year by filtering out those patients who were admitted for a
 tracheostomy in December.
 
-\hypertarget{one-hot-encoding}{%
-\subsection{One-Hot-Encoding}\label{one-hot-encoding}}
+\hypertarget{sec2D}{%
+\subsection{One-Hot-Encoding}\label{sec2D}}
 
 When creating the predictive model for readmissions, we wish to conduct
 comorbidity analysis which will allow us to include the presence of
@@ -257,8 +255,8 @@ diagnosis code in the 40 diagnosis columns, we added a column for that
 code which equaled 1 if the patient received the diagnosis on their
 tracheostomy admission and equaled 0 otherwise.
 
-\hypertarget{joining-data-sets}{%
-\subsection{Joining Data Sets}\label{joining-data-sets}}
+\hypertarget{sec2E}{%
+\subsection{Joining Data Sets}\label{sec2E}}
 
 The last step in preparing the data for modeling and analysis was to
 join the three data sets. Each data set had a NRD record identifier
@@ -272,11 +270,153 @@ and \texttt{hospital} data sets by the record identifier.
 \hypertarget{sec4}{%
 \section{Methods and Analysis}\label{sec4}}
 
-\hypertarget{predictive-model}{%
-\subsection{Predictive Model}\label{predictive-model}}
+In this section, we address and analyze the three objectives of this
+project.
 
-\hypertarget{days-to-readmission}{%
-\subsection{Days to Readmission}\label{days-to-readmission}}
+\hypertarget{sec4A}{%
+\subsection{Predictive Models}\label{sec4A}}
+
+The main objective of this project is to predict whether or not a
+patient will return to the hospital within 30 days of being discharged
+from a tracheostomy procedure. This is a classification problem which
+influences us to apply machine learning classification models. We look
+at two such models: a support vector machine and a random forest.
+
+\hypertarget{sec4AA}{%
+\subsubsection{Comorbidity Analysis}\label{sec4AA}}
+
+Before fitting the two models, we first consider what predictors to
+include. With over 500 possible diagnosis codes each patient can
+receive, we choose to select a subset of these codes that we believe
+would have the largest influence on predicting if a patient would be
+readmitted. To do this, we first observed the proportion of readmitted
+patients compared to the proportion of non-readmitted patients who
+received each comorbidity. Here, comorbidity is defined as any diagnosis
+code that a patient was diagnosed with at the same visit as their
+tracheostomy procedure. We plotted these proportions on a bar plot in
+descending order in hopes of being able to compare the proportions
+between both groups and determine which codes to include in our model
+based on the largest differences. This plot can be viewed in
+Figure~\ref{fig:props}. \newline \newline However, with such a large
+number of unique codes, the proportions are quite small and hard to
+compare. As a result, we then plotted the difference between the
+proportions of both groups for each comorbidity. In other words, for
+each comorbidity we plotted the absolute difference between the
+proportion of readmitted patients who were diagnosed with that
+comorbidity and the proportion of non-readmitted patients who were
+diagnosed with that comorbidity. We then chose a cutoff value of 0.015
+which returned 40 comorbidities whose difference in proportions was
+greater than or equal to 0.015. This plot can be viewed in
+Figure~\ref{fig:diffs}. The top two diagnosis codes with the largest
+difference in proportions for readmitted and non-readmitted patients is
+Z515 and J9601 which represent encounter for palliative care and acute
+respiratory failure with hypoxia respectively. \newline \newline We also
+included the following variables that we believe to have an association
+with whether or not a patient is readmitted: age, sex, number of
+diagnoses, number of procedures, all patient refined diagnosis related
+group (DRG), and hospital bed size.
+
+\hypertarget{sec4AB}{%
+\subsubsection{Support Vector Machine}\label{sec4AB}}
+
+The first model we chose to fit is a support vector machine (SVM) which
+finds a hyperplane to separate our data into two classes (readmitted and
+non-readmitted) as well as possible while allowing for some violations
+to this separation to prevent overfitting. The SVM uses what is called a
+kernel to quantify the similarity between observations. The most popular
+kernels are the linear kernel, polynomial kernel, and radial kernel with
+the polynomial and radial kernels allowing for a more flexible decision
+boundary. Therefore, on our 2018 training data, we fit three SVMs, one
+for each kernel using the predictors mentioned in Section~\ref{sec4AA}.
+We then plotted the ROC curves to evaluate the performance of each
+classification model on our 2019 testing data. Figure~\ref{fig:svm_roc}
+shows that comparing these three kernels, the linear kernel performs the
+best with an area under the curve (AUC) of 0.756. Therefore, we continue
+our analysis with the SVM with linear kernel. \newline
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/svm_roc} 
+
+}
+
+\caption{Plot of the ROC curves for SVMs with linear, polynomial and radial kernels.}\label{fig:svm_roc}
+\end{figure}
+
+Figure~\ref{fig:svm_conf} below displays the confusion matrix of the SVM
+with linear kernel model. Due to the imbalanced nature of our data where
+the readmitted class is larger than the non-readmitted class, the metric
+of accuracy may be misleading. For example, if 90\% of our data belongs
+to the readmitted class and only 10\% belongs to the non-readmitted
+class, a model that predicts all observations to belong to the
+readmitted class can achieve 90\% accuracy. As a result, to evaluate how
+well our model correctly predicts observations, we turn to Matthew's
+Correlation Coefficient (MCC) which takes into account true positives
+(TP), true negatives (TN), false positives (FP), and false negatives
+(FN). The MCC of our SVM model is 0.6176 and the formula is: \newline \[
+MCC = \frac{(TP*TN) - (FP*FN)}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}
+\]
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.3\linewidth]{figures/svm_conf} 
+
+}
+
+\caption{Confusion matrix for SVM with linear kernel.}\label{fig:svm_conf}
+\end{figure}
+
+\hypertarget{sec4AC}{%
+\subsubsection{Random Forest}\label{sec4AC}}
+
+The second model we considered was a Random Forest (RF) model which
+takes our high dimensional data and aggregates decision trees to improve
+overall predictive performance. Figure~\ref{fig:rf_conf} displays the
+confusion matrix for the RF and the MCC can be calculated to get 0.7489.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.3\linewidth]{figures/rf_conf} 
+
+}
+
+\caption{Confusion matrix for RF.}\label{fig:rf_conf}
+\end{figure}
+
+We observe that the RF MCC is over 20\% larger than the SVM MCC
+indicating that the RF is the better model in predicting whether or not
+a patient is readmitted within 30 days of their tracheostomy discharge.
+
+\hypertarget{sec4ACA}{%
+\subsubsection{Feature Importance}\label{sec4ACA}}
+
+From our best model, we wish to determine which features contribute the
+most to make predictions using Shapley values. Each classification
+prediction can be broken down into a sum of contributions from each
+input variable of our RF model. These contributions are the Shapley
+values. We can observe the mean absolute Shapley value for each feature
+across all the data to determine each feature's overall contribution
+towards the prediction. The top 10 features can be view in
+Figure~\ref{fig:rf_imp}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/rf_imp} 
+
+}
+
+\caption{Feature importance plot of RF model showing the mean absolute Shapley values for each predictor.}\label{fig:rf_imp}
+\end{figure}
+
+Features with higher Shapley values are considered more important as
+they have a greater impact on the model's predictions. From this figure,
+the all patient refined DRG marginally contributes the most to the RF's
+predictions followed by the number of procedures the patient received
+during their tracheostomy visit as well as whether or not the patient
+received the diagnosis code Z931 for gastrostomy status.
+
+\hypertarget{sec4B}{%
+\subsection{Days to Readmission}\label{sec4B}}
 
 Another objective of this project was to explore the number of days
 until patients were readmitted for those who were readmitted within 30
@@ -298,8 +438,8 @@ interesting to note that while the largest proportion of males are
 readmitted after 1 day, there is an equal proportion of females who are
 readmitted after 1 day as well as after 20 days of being discharged.
 
-\hypertarget{readmitted-diagnoses}{%
-\subsection{Readmitted Diagnoses}\label{readmitted-diagnoses}}
+\hypertarget{sec4C}{%
+\subsection{Readmitted Diagnoses}\label{sec4C}}
 
 We also created a similar figure looking at the most common diagnoses
 that patients were readmitted with. For those patients who were
@@ -327,10 +467,12 @@ representing unspecified severe protein-calorie malnutrition.
 
 \bmhead{Acknowledgments}
 
-Acknowledgments are not compulsory. Where included they should be brief.
-Grant or contribution numbers may be acknowledged.
-
-Please refer to Journal-level guidance for any specific requirements.
+We thank Dr.~Anand K. Devaiah, Dean Kennedy, and Dr.~Jessica R. Levi
+from the Boston University Chobanian \& Avedisian School of Medicine for
+providing the objectives of this project, access to the data, and
+assistance with any questions we had throughout the project. We also
+thank Professor Masanao Yajima from Boston University MSSP for his
+guidance, support, and feedback throughout this process.
 
 \begin{appendices}
 
@@ -339,11 +481,29 @@ Please refer to Journal-level guidance for any specific requirements.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=1\linewidth]{figures/readmit_diags} 
+{\centering \includegraphics[width=0.9\linewidth]{figures/readmit_diags} 
 
 }
 
 \caption{Barplot of proportion of males and proportion of females who received specific diagnosis codes at their readmission visit.}\label{fig:readmit_diags}
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/props} 
+
+}
+
+\caption{Barplot of proportion of readmitted patients and proportion of non-readmitted patients who received specific diagnosis codes at their tracheostomy visit.}\label{fig:props}
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/diffs} 
+
+}
+
+\caption{Barplot of proportion differences between readmitted patients and non-readmitted patients who received specific diagnosis codes at their tracheostomy visit.}\label{fig:diffs}
 \end{figure}
 
 \end{appendices}
