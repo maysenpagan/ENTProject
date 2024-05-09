@@ -1,0 +1,407 @@
+---
+title: "Tracheostomy"
+author: "Febriany"
+date: "2024-05-01"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(data.table)
+library(tidyverse)
+library(caret)
+library(dplyr)
+library(ggplot2)
+library(e1071)
+library(pROC)
+library(mltools)
+library(randomForest)
+library(shapviz)
+library(kernelshap)
+library(treeshap)
+```
+Set Working DIrectory
+
+```{r}
+#setwd("/restricted/projectnb/ma679")
+```
+
+
+2018 Dataset
+
+```{r}
+# Hospital
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_Hospital.TXT'"
+output <- trimws(system(command, intern = TRUE))
+hospital_2018 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_Hospital.CSV', col.names = output)
+ 
+# Core
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_Core.TXT'"
+output <- trimws(system(command, intern = TRUE))
+core_2018 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_Core.CSV', nrows = 3000000, col.names = output)
+ 
+# severity
+ 
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2018_Severity.TXT'"
+output <- trimws(system(command, intern = TRUE))
+severity_2018 <- fread('/restricted/projectnb/ma679/Data/NRD_2018_Severity.CSV',  col.names = output)
+```
+
+2019 Dataset
+
+```{r}
+# Hospital
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_Hospital.TXT'"
+output <- trimws(system(command, intern = TRUE))
+hospital_2019 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_Hospital.CSV', col.names = output)
+ 
+# Core
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_Core.TXT'"
+output <- trimws(system(command, intern = TRUE))
+core_2019 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_Core.CSV', nrows = 3000000, col.names = output)
+ 
+# severity
+ 
+command <- "awk 'NR > 19 {print substr($0, 41, 29)}' '/restricted/projectnb/ma679/Data/FileSpecifications/FileSpecifications_NRD_2019_Severity.TXT'"
+output <- trimws(system(command, intern = TRUE))
+severity_2019 <- fread('/restricted/projectnb/ma679/Data/NRD_2019_Severity.CSV',  col.names = output)
+```
+
+Preparing training dataSet
+```{r}
+#Filter Tracheostomy 
+column_names <- paste0('I10_PR', 1:25)
+
+core_2018 <- core_2018 %>%
+  mutate(tracs = apply(select(., all_of(column_names)), 1, function(x) {
+    ifelse(any(substr(x, 1, 4) == '0B11'), 1, 0)
+  }))
+
+#Filter the data based on the condition
+core_2018_trac <- core_2018 %>%
+  filter(
+    apply(
+      select(., all_of(column_names)),
+      1,
+      function(x) any(substr(x, 1, 4) == '0B11')))
+
+#Filter for readmission
+
+trac_ids <- core_2018_trac$NRD_VisitLink
+core_2018_readmi <- core_2018[core_2018$NRD_VisitLink %in% trac_ids, ]
+
+#Get the NRD_DaysToEvent for Trac 1
+core_2018_readmi <- core_2018_readmi %>%
+  mutate(VisitLink1 = ifelse(tracs == 1, NRD_DaysToEvent + LOS, NA))
+
+core_2018_readmi <- core_2018_readmi %>%
+  group_by(NRD_VisitLink) %>%
+  mutate(VisitLink1 = first(na.omit(VisitLink1))) %>%
+  ungroup()
+
+#Get the NRD_DaysToEvent for Trac 0
+core_2018_readmi <- core_2018_readmi %>%
+  group_by(NRD_VisitLink) %>%
+  mutate(
+    VisitLink0 = ifelse(tracs == 0, NRD_DaysToEvent, NA)
+  ) %>%
+  ungroup()
+
+#ReadmissionTime
+core_2018_readmi <- core_2018_readmi %>%
+  mutate(ReadmissionTime = VisitLink0 - VisitLink1)
+
+readmission_within_30_days <- core_2018_readmi %>%
+  filter(ReadmissionTime > 0 & ReadmissionTime <= 30)
+
+core_2018_readmi <- core_2018_readmi %>%
+  mutate(readmitted = ifelse(tracs == 1, 0, ifelse(ReadmissionTime > 0 & ReadmissionTime <= 30, 1, NA)))
+
+#Database for training data
+trac_30_2018 <- core_2018_readmi %>%
+  arrange(NRD_VisitLink, desc(readmitted)) %>%
+  distinct(NRD_VisitLink, .keep_all = TRUE)
+
+#Filtering out December 2018
+#trac_30_2018 <- subset(trac_30_2018, !(DMONTH %in% c(12)))
+trac_30_2018 <- trac_30_2018 %>% filter(DMONTH!=12)
+
+
+# For second question
+core_2018_readmi <- core_2018_readmi %>%
+  mutate(readmitted_all = ifelse(tracs == 1, 0, ifelse(ReadmissionTime > 0, 1, NA)))
+
+
+# For third question
+core_2018_readmi <- core_2018_readmi %>%
+  mutate(
+    diagnose = ifelse(readmitted_all == 1, I10_DX1, NA),
+    procedure = ifelse(readmitted_all == 1, I10_PR1, NA)
+  )
+
+```
+
+Preparing testing dataSet
+
+```{r}
+#Filter Tracheostomy 
+column_names <- paste0('I10_PR', 1:25)
+
+core_2019 <- core_2019 %>%
+  mutate(tracs = apply(select(., all_of(column_names)), 1, function(x) {
+    ifelse(any(substr(x, 1, 4) == '0B11'), 1, 0)
+  }))
+
+#Filter the data based on the condition
+core_2019_trac <- core_2019 %>%
+  filter(
+    apply(
+      select(., all_of(column_names)),
+      1,
+      function(x) any(substr(x, 1, 4) == '0B11')))
+
+#Filter for readmission
+
+trac_ids <- core_2019_trac$NRD_VisitLink
+core_2019_readmi <- core_2019[core_2019$NRD_VisitLink %in% trac_ids, ]
+
+#Get the NRD_DaysToEvent for Trac 1
+core_2019_readmi <- core_2019_readmi %>%
+  mutate(VisitLink1 = ifelse(tracs == 1, NRD_DaysToEvent + LOS, NA))
+
+core_2019_readmi <- core_2019_readmi %>%
+  group_by(NRD_VisitLink) %>%
+  mutate(VisitLink1 = first(na.omit(VisitLink1))) %>%
+  ungroup()
+
+#Get the NRD_DaysToEvent for Trac 0
+core_2019_readmi <- core_2019_readmi %>%
+  group_by(NRD_VisitLink) %>%
+  mutate(
+    VisitLink0 = ifelse(tracs == 0, NRD_DaysToEvent, NA)
+  ) %>%
+  ungroup()
+
+#ReadmissionTime
+core_2019_readmi <- core_2019_readmi %>%
+  mutate(ReadmissionTime = VisitLink0 - VisitLink1)
+
+readmission_within_30_days <- core_2019_readmi %>%
+  filter(ReadmissionTime > 0 & ReadmissionTime <= 30)
+
+core_2019_readmi <- core_2019_readmi %>%
+  mutate(readmitted = ifelse(tracs == 1, 0, ifelse(ReadmissionTime > 0 & ReadmissionTime <= 30, 1, NA)))
+
+#Database for training data
+trac_2019 <- core_2019_readmi %>%
+  arrange(NRD_VisitLink, desc(readmitted)) %>%
+  distinct(NRD_VisitLink, .keep_all = TRUE)
+
+#Filtering out December 2019
+trac_2019 <- subset(trac_2019, !(DMONTH %in% c(12)))
+
+```
+
+
+One hot encoding for commorbidities 2018
+
+```{r}
+#Join with hospital dataset severity and hospital
+trac_30_2018 <- left_join(trac_30_2018, severity_2018[,-4], by = "KEY_NRD")
+trac_30_2018 <- left_join(trac_30_2018, hospital_2018[,-c(6,12)], by = "HOSP_NRD")
+
+samp <- trac_30_2018[,11:50] %>% pivot_longer(cols = everything(), names_to = "I10_DX", values_to = "Values")
+samp$person <- rep(trac_30_2018$NRD_VisitLink, each = 40)
+dummy <- dummyVars(" ~ Values", data=samp)
+first <- data.frame(predict(dummy, newdata = samp)) 
+first$person <- rep(1:7322, each = 40)
+encoded <- first %>% group_by(person) %>% summarize_all(sum)
+encoded <- encoded[, !names(encoded) %in% "ValuesNA"]
+encoded$person <- trac_30_2018$NRD_VisitLink
+colnames(encoded)[1] <- "NRD_VisitLink"
+trac_30_2018 <- left_join(trac_30_2018, encoded, by = "NRD_VisitLink")
+colnames(trac_30_2018) <- gsub(x = colnames(trac_30_2018), pattern = "Values", replacement = "")
+```
+
+One hot encoding for commorbidities 2019
+
+```{r}
+#Join with hospital dataset severity and hospital
+trac_2019 <- left_join(trac_2019, severity_2019[,-4], by = "KEY_NRD")
+trac_2019 <- left_join(trac_2019, hospital_2019[,-c(6,12)], by = "HOSP_NRD")
+
+samp <- trac_2019[,11:50] %>% pivot_longer(cols = everything(), names_to = "I10_DX", values_to = "Values")
+samp$person <- rep(trac_2019$NRD_VisitLink, each = 40)
+dummy <- dummyVars(" ~ Values", data=samp)
+first <- data.frame(predict(dummy, newdata = samp)) 
+first$person <- rep(1:6754, each = 40)
+encoded <- first %>% group_by(person) %>% summarize_all(sum)
+encoded <- encoded[, !names(encoded) %in% "ValuesNA"]
+encoded$person <- trac_2019$NRD_VisitLink
+colnames(encoded)[1] <- "NRD_VisitLink"
+trac_2019 <- left_join(trac_2019, encoded, by = "NRD_VisitLink")
+colnames(trac_2019) <- gsub(x = colnames(trac_2019), pattern = "Values", replacement = "")
+```
+
+
+SVM Model
+
+```{r}
+# Select relevant columns from trac_30_2018
+svm_2018 <- trac_30_2018 %>%
+  select(AGE, FEMALE, I10_NDX, I10_NPR, A419, C329, C770, C7989, D509, D62, D696, E43, E440, E46, E871, E872, E876, G931, G9340, G9341, I2510, I469, J189, J449, J9501, J95851, J9601, J9602, J9621, N179, N186, N189, R1310, S065X9A, S066X9A, Y848, Z515, Z681, Z833, Z87891, Z9221, Z923, Z931, Z9911, APRDRG, HOSP_BEDSIZE, readmitted)
+
+# Select relevant columns from trac_2019
+svm_2019 <- trac_2019 %>%
+  select(AGE, FEMALE, I10_NDX, I10_NPR, A419, C329, C770, C7989, D509, D62, D696, E43, E440, E46, E871, E872, E876, G931, G9340, G9341, I2510, I469, J189, J449, J9501, J95851, J9601, J9602, J9621, N179, N186, N189, R1310, S065X9A, S066X9A, Y848, Z515, Z681, Z833, Z87891, Z9221, Z923, Z931, Z9911, APRDRG, HOSP_BEDSIZE, readmitted)
+
+set.seed(123)
+svm_model <- svm(readmitted ~ ., data = svm_2018, kernel = "linear", type = "C-classification")
+svm_model1 <- svm(readmitted ~ ., data = svm_2018, kernel = "radial", type = "C-classification")
+svm_model2 <- svm(readmitted ~ ., data = svm_2018, kernel = "polynomial", type = "C-classification")
+svm_predictions <- predict(svm_model, newdata = svm_2019)
+
+# Create a data frame with Actual and Predicted values
+evaluation_data <- data.frame(Actual = svm_2019$readmitted, Predicted = svm_predictions)
+
+# Check if the number of rows is the same
+if(nrow(evaluation_data) == nrow(svm_2019)) {
+  # Create confusion matrix
+  confusion_matrix <- table(Actual = evaluation_data$Actual, Predicted = evaluation_data$Predicted)
+  print(confusion_matrix)
+
+  # Evaluate model performance
+  accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+  print(paste("Accuracy:", accuracy))
+} else {
+  print("Number of rows in evaluation_data and svm_2019 are not the same.")
+}
+
+#Matthews Correlation Coefficient 
+mcc <- mcc(svm_predictions, factor(svm_2019$readmitted))
+print(mcc)
+```
+
+SVM Hyperparameter Tuning
+```{r}
+xdata <- subset(trac_30_2018, select = c("AGE", "FEMALE", "I10_NDX", "I10_NPR", "A0472", "B961", "B965", "C329", "D638", "D696", "D72829", "E119", "E440", "E6601", "E7800", "E8339", "E870", "E872", "F17210", "G4700", "G7281", "G931", "G9340", "I10", "I130", "I469", "I472", "I4892", "I5023", "I959", "J15212", "J159", "J189", "J690", "J9600", "J9601", "J9621", "J9811", "K2970", "K567", "N179", "R1310", "R402214", "R6521", "S0219XA", "S065X9A", "S066X9A", "T83511A", "Y848", "Y92410", "Z515", "Z794", "Z8249", "Z87891", "Z9221", "Z923", "Z930", "Z931", "Z9911", "HOSP_BEDSIZE", "HOSP_URCAT4"))
+
+ydata <- factor(trac_30_2018$readmitted) %>%
+  recode("0" = "no", "1" = "yes")
+
+
+ctrl <- trainControl(method = "repeatedcv",
+                     repeats = 5,
+                     summaryFunction = twoClassSummary,
+                     classProbs = TRUE)
+
+svm.tune <- train(x = as.matrix(xdata),
+                  y = ydata,
+                  method = "svmLinear",
+                  tuneLength = 5,
+                  metric = "ROC",
+                  trControl = ctrl,
+                  tuneGrid = expand.grid(C = c(1, 2, 3, 4, 5, 7)))
+
+best_model <- svm.tune$best.model
+
+```
+
+
+Random Forest
+```{r}
+set.seed(123)
+rf_2018 <- trac_30_2018 %>%
+  select(AGE, FEMALE, I10_NDX, I10_NPR, A419, C329, C770, C7989, D509, D62, D696, E43, E440, E46, E871, E872, E876, G931, G9340, G9341, I2510, I469, J189, J449, J9501, J95851, J9601, J9602, J9621, N179, N186, N189, R1310, S065X9A, S066X9A, Y848, Z515, Z681, Z833, Z87891, Z9221, Z923, Z931, Z9911, APRDRG, HOSP_BEDSIZE, readmitted)
+
+rf_2019 <- trac_2019 %>%
+  select(AGE, FEMALE, I10_NDX, I10_NPR, A419, C329, C770, C7989, D509, D62, D696, E43, E440, E46, E871, E872, E876, G931, G9340, G9341, I2510, I469, J189, J449, J9501, J95851, J9601, J9602, J9621, N179, N186, N189, R1310, S065X9A, S066X9A, Y848, Z515, Z681, Z833, Z87891, Z9221, Z923, Z931, Z9911, APRDRG, HOSP_BEDSIZE, readmitted)
+
+rf_2018$readmitted <- factor(rf_2018$readmitted)
+rf_2019$readmitted <- factor(rf_2019$readmitted)
+rf_model <- randomForest(readmitted ~ ., data = rf_2018, probability = TRUE)
+rf_predictions <- predict(rf_model, newdata = rf_2019)
+rf_probabilities <- predict(rf_model, newdata = rf_2019, type = "response")
+rf_probabilities_numeric <- as.numeric(as.character(rf_probabilities))
+roc_curve <- roc(response = rf_2019$readmitted, predictor = rf_probabilities_numeric)
+
+plot(roc_curve, main = "ROC Curve for Random Forest Model", col = "blue")
+abline(a = 0, b = 1, lty = 2, col = "red")
+legend("bottomright", legend = c("ROC Curve", "Random Classifier"), col = c("blue", "red"), lty = c(1, 2))
+
+conf_matrix_rf <- table(Predicted = rf_predictions, Actual = rf_2019$readmitted)
+print(conf_matrix_rf)
+accuracy_rf <- mean(rf_predictions == rf_2019$readmitted)
+mcc_rf <- mcc(rf_predictions, factor(rf_2019$readmitted))
+print(mcc_rf)
+
+```
+
+ROC for SVM
+
+```{r}
+# linear
+roc_obj <- roc(svm_2019$readmitted, as.numeric(levels(predict(svm_model, newdata = svm_2019)))[predict(svm_model, newdata = svm_2019)])
+plot(roc_obj, main = "ROC Curve for SVM with Different Kernels", col = "red", print.auc = TRUE)
+
+# radial
+roc_obj <- roc(svm_2019$readmitted, as.numeric(levels(predict(svm_model1, newdata = svm_2019)))[predict(svm_model1, newdata = svm_2019)])
+plot(roc_obj, add = TRUE, col = "blue")
+
+# polynomial
+roc_obj <- roc(svm_2019$readmitted, as.numeric(levels(predict(svm_model2, newdata = svm_2019)))[predict(svm_model2, newdata = svm_2019)])
+plot(roc_obj, add = TRUE, col = "green")
+legend("bottomright", legend = c("Linear", "Radial", "Polynomial"), col = c("red", "blue", "green"), lty = 1)
+
+```
+
+```{r}
+library(kernelshap)
+library(shapviz)
+
+# Assuming you have already defined rf_model and rf_2019
+
+xvars <- setdiff(colnames(rf_2019), "readmitted")
+
+# Sample a subset of the training data for the background dataset
+bg_X <- rf_2018[sample(nrow(rf_2018), size = 10, replace = FALSE), xvars]
+
+# Compute SHAP values using kernelshap
+shap_values <- kernelshap(rf_model, X = rf_2019[, xvars], bg_X = bg_X)
+
+# Visualize SHAP values
+shap_values_viz <- shapviz(shap_values)
+sv_importance(shap_values_viz, kind = "bee")
+
+```
+```{r}
+library(beeswarm)
+library(reshape2)
+
+# Combine SHAP values into a data frame
+shap_df <- as.data.frame(do.call(cbind, ordered_feature_shap))
+names(shap_df) <- ordered_features
+
+# Convert to long format for beeswarm plot
+shap_long <- melt(shap_df)
+
+beeswarm(x = shap_long$variable, y = shap_long$value, pch = 16, main = "SHAP Values for Features", xlab = "Feature", ylab = "SHAP Value")
+
+```
+
+
+Feature Importance for Random Forest
+
+```{r}
+model_unified <- randomForest.unify(rf_model, rf_2018)
+treeshap_res <- treeshap(model_unified, rf_2018[1:7000,])
+plot_feature_importance(treeshap_res, max_vars = 10)
+#plot_feature_dependence(treeshap_res, "I10_NPR")
+```
+
