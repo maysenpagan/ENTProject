@@ -47,8 +47,7 @@ affiliations:
 
 # Sample for structured abstract
 abstract: |
-  Hospital readmissions following the completion of a procedure poses significant challenges for both patients and hospitals. Being readmitted could increase the risk of complications for patients and introduce states of distress. For hospitals, readmissions present a strain on resources and their reputation. This project aims to develop a model that can predict whether a patient will be readmitted within 30 days of being discharged. After thorough data preprocessing and feature extraction, three models were trained on patient data from 2018 and tested on patient data from 2019 to determine predictive performance: a null model, a support vector machine (SVM), and a random forest (RF). Using Matthew's Correlation Coefficient to compare models, the HERE model had the best performance with a coefficient of HERE while the null model has a coefficient of HERE, and the HERE model has a coefficient of HERE.  
-
+  Hospital readmissions following the completion of a procedure poses significant challenges for both patients and hospitals. Being readmitted could increase the risk of complications for patients and introduce states of distress. For hospitals, readmissions present a strain on resources and their reputation. This project aims to develop a model that can predict whether a patient will be readmitted within 30 days of being discharged. After thorough data preprocessing and feature extraction, two models were trained on patient data from 2018 and tested on patient data from 2019 to determine predictive performance: a support vector machine (SVM) and a random forest (RF). Using Matthew's Correlation Coefficient to compare models, the RF model had the best performance with a coefficient of HERE while the SVM had a coefficient of HERE. 
 
 bibliography: bibliography.bib
 
@@ -78,11 +77,11 @@ output: rticles::springer_article
 
 In the medical field of Otolaryngology, preventing hospital readmissions following procedures such as tracheostomies, total laryngectomies, or mastoidectomies is significant both medically for patients as well as financially for healthcare institutions. Medically, avoiding readmissions can benefit patients' well-being as it reduces the possible distress and suffering experienced from complications from new or returning medical conditions. Financially, preventing readmissions is crucial for hospitals who are paid by capitation. Capitation is a payment system that pays hospitals a fixed amount per patient for a prescribed period, therefore incentivizing hospitals to conduct less procedures and treat patients as efficiently as possible. As a result, hospitals paid by capitation incur the costs that are associated with providing care to patients who are readmitted. Knowing if a patient might be at higher risk of a readmission would allow doctors to increase the effectiveness of their initial interventions and promote a smoother recovery process while maintaining their reputation and quality of care. Therefore, developing predictive models that can predict whether a patient will be readmitted is essential for ensuring the efficiency of healthcare. \newline
 \newline
-This project aims to build a model that predicts if a patient who underwent a tracheostomy procedure is going to be readmitted within 30 days of being discharged from the hospital. For those patients who are readmitted within 30 days, this project also analyzes the number of days until they will be readmitted as well as the most common diagnoses that the patients will be readmitted with.
+This project aims to build a model that predicts if a patient who underwent a tracheostomy procedure is going to be readmitted within 30 days of being discharged from the hospital. For those patients who are readmitted within 30 days, this project also analyzes the number of days until they will be readmitted as well as the most common diagnoses that the patients will be readmitted with. The following analysis for this project was conducted on a sample of 3 million observations from the original data.
 
 # Data Preprocessing {#sec2}
 
-The data for this project was provided to us from the Healthcare Cost and Utilization Project (HCUP) Nationwide Readmissions Database (NRD). This database provides information on admissions and discharges for patients with and without repeat hospital visits within a given year. To address the research questions of this project, we used data from the years of 2018 and 2019, each of which had three data sets. For each year, there was a `core` data set which contained main information such as the age and sex of the patient as well as the diagnoses and procedures the patient received for this given admission. The `severity` data set provides information on the severity of the condition for a given admission and the `hospital` data set contains characteristics of the hospital the patient was admitted to such as bed size.
+The data for this project was provided to us from the Healthcare Cost and Utilization Project (HCUP) Nationwide Readmissions Database (NRD). This database provides information on admissions and discharges for patients with and without repeat hospital visits within a given year. To address the research questions of this project, we used data from the years of 2018 and 2019, each of which had three data sets. For each year, there was a `core` data set which contained main information such as the age and sex of the patient as well as the diagnoses and procedures the patient received for this given admission. The `severity` data set provides information on the severity of the condition for a given admission and the `hospital` data set contains characteristics of the hospital the patient was admitted to such as bed size. 
 
 ## Empty Diagnoses and Procedures
 
@@ -112,6 +111,26 @@ The last step in preparing the data for modeling and analysis was to join the th
 
 # Methods and Analysis {#sec4}
 
+## Predictive Model
+
+## Days to Readmission
+
+Another objective of this project was to explore the number of days until patients were readmitted for those who were readmitted within 30 days. Figure\ \ref{fig:daysto} plots the counts of days to readmission comparing males and females. \newline
+
+```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap="Barplot of proportion of males and proportion of females who were readmitted to a hospital after a specific number of days following discharge.", fig.pos="H"}
+knitr::include_graphics("figures/daysto.png")
+```
+
+From this figure, we can see that most readmitted patients return to the hospital within 10 days of being discharged from the tracheostomy. It is interesting to note that while the largest proportion of males are readmitted after 1 day, there is an equal proportion of females who are readmitted after 1 day as well as after 20 days of being discharged.
+
+## Readmitted Diagnoses
+
+We also created a similar figure looking at the most common diagnoses that patients were readmitted with. For those patients who were readmitted within 30 days of their tracheostomy discharge, we calculated the proportion of males and the proportion of females who received a particular diagnosis code at their readmitted visit. We then plotted these proportions and used the proportion cutoff of 0.15 to observe the top 15 most common readmission diagnoses.\newline
+\newline
+Figure\ \ref{fig:readmit_diags} shows that the most common readmitted diagnosis, with an equal proportion of males and females receiving it, is I10 which represents essential (primary) hypertension. This is followed by A419 which is sepsis, a condition in which the body responds improperly to an infection. Similar to hypertension, an equal proportion of males and females are readmitted with sepsis. \newline
+\newline
+The figure also shows that there are 4 common readmission diagnoses that females are diagnosed with but males are not. These codes are F419, E876, F329, and N390 which represent anxiety disorder, hypokalemia, single episode major depressive disorder, and urinary tract infection respectively. Within these top 15 most common readmission diagnoses, there is one code that males are diagnosed with and females are not: E43 representing unspecified severe protein-calorie malnutrition.
+
 # Conclusion {#sec5}
 
 \bmhead{Acknowledgments}
@@ -124,6 +143,8 @@ Please refer to Journal-level guidance for any specific requirements.
 
 # {#secA}
 
-An appendix contains supplementary information that is not an essential part of the text itself but which may be helpful in providing a more comprehensive understanding of the research problem or it is information that is too cumbersome to be included in the body of the paper.
+```{r readmit_diags, echo=FALSE, out.width = "100%", fig.pos="H", fig.align = "center", fig.cap = "Barplot of proportion of males and proportion of females who received specific diagnosis codes at their readmission visit."}
+knitr::include_graphics("figures/readmit_diags.png")
+```
 
 :::

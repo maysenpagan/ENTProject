@@ -113,13 +113,12 @@ introduce states of distress. For hospitals, readmissions present a
 strain on resources and their reputation. This project aims to develop a
 model that can predict whether a patient will be readmitted within 30
 days of being discharged. After thorough data preprocessing and feature
-extraction, three models were trained on patient data from 2018 and
-tested on patient data from 2019 to determine predictive performance: a
-null model, a support vector machine (SVM), and a random forest (RF).
-Using Matthew's Correlation Coefficient to compare models, the HERE
-model had the best performance with a coefficient of HERE while the null
-model has a coefficient of HERE, and the HERE model has a coefficient of
-HERE.}
+extraction, two models were trained on patient data from 2018 and tested
+on patient data from 2019 to determine predictive performance: a support
+vector machine (SVM) and a random forest (RF). Using Matthew's
+Correlation Coefficient to compare models, the RF model had the best
+performance with a coefficient of HERE while the SVM had a coefficient
+of HERE.}
 
 \keywords{}
 
@@ -153,7 +152,9 @@ predicts if a patient who underwent a tracheostomy procedure is going to
 be readmitted within 30 days of being discharged from the hospital. For
 those patients who are readmitted within 30 days, this project also
 analyzes the number of days until they will be readmitted as well as the
-most common diagnoses that the patients will be readmitted with.
+most common diagnoses that the patients will be readmitted with. The
+following analysis for this project was conducted on a sample of 3
+million observations from the original data.
 
 \hypertarget{sec2}{%
 \section{Data Preprocessing}\label{sec2}}
@@ -271,6 +272,56 @@ and \texttt{hospital} data sets by the record identifier.
 \hypertarget{sec4}{%
 \section{Methods and Analysis}\label{sec4}}
 
+\hypertarget{predictive-model}{%
+\subsection{Predictive Model}\label{predictive-model}}
+
+\hypertarget{days-to-readmission}{%
+\subsection{Days to Readmission}\label{days-to-readmission}}
+
+Another objective of this project was to explore the number of days
+until patients were readmitted for those who were readmitted within 30
+days. Figure~\ref{fig:daysto} plots the counts of days to readmission
+comparing males and females. \newline
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/daysto} 
+
+}
+
+\caption{Barplot of proportion of males and proportion of females who were readmitted to a hospital after a specific number of days following discharge.}\label{fig:daysto}
+\end{figure}
+
+From this figure, we can see that most readmitted patients return to the
+hospital within 10 days of being discharged from the tracheostomy. It is
+interesting to note that while the largest proportion of males are
+readmitted after 1 day, there is an equal proportion of females who are
+readmitted after 1 day as well as after 20 days of being discharged.
+
+\hypertarget{readmitted-diagnoses}{%
+\subsection{Readmitted Diagnoses}\label{readmitted-diagnoses}}
+
+We also created a similar figure looking at the most common diagnoses
+that patients were readmitted with. For those patients who were
+readmitted within 30 days of their tracheostomy discharge, we calculated
+the proportion of males and the proportion of females who received a
+particular diagnosis code at their readmitted visit. We then plotted
+these proportions and used the proportion cutoff of 0.15 to observe the
+top 15 most common readmission diagnoses.\newline \newline
+Figure~\ref{fig:readmit_diags} shows that the most common readmitted
+diagnosis, with an equal proportion of males and females receiving it,
+is I10 which represents essential (primary) hypertension. This is
+followed by A419 which is sepsis, a condition in which the body responds
+improperly to an infection. Similar to hypertension, an equal proportion
+of males and females are readmitted with sepsis. \newline \newline The
+figure also shows that there are 4 common readmission diagnoses that
+females are diagnosed with but males are not. These codes are F419,
+E876, F329, and N390 which represent anxiety disorder, hypokalemia,
+single episode major depressive disorder, and urinary tract infection
+respectively. Within these top 15 most common readmission diagnoses,
+there is one code that males are diagnosed with and females are not: E43
+representing unspecified severe protein-calorie malnutrition.
+
 \hypertarget{sec5}{%
 \section{Conclusion}\label{sec5}}
 
@@ -286,10 +337,14 @@ Please refer to Journal-level guidance for any specific requirements.
 \hypertarget{secA}{%
 \section{}\label{secA}}
 
-An appendix contains supplementary information that is not an essential
-part of the text itself but which may be helpful in providing a more
-comprehensive understanding of the research problem or it is information
-that is too cumbersome to be included in the body of the paper.
+\begin{figure}[H]
+
+{\centering \includegraphics[width=1\linewidth]{figures/readmit_diags} 
+
+}
+
+\caption{Barplot of proportion of males and proportion of females who received specific diagnosis codes at their readmission visit.}\label{fig:readmit_diags}
+\end{figure}
 
 \end{appendices}
 
