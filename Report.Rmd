@@ -49,8 +49,6 @@ affiliations:
 abstract: |
   Hospital readmissions following the completion of a procedure poses significant challenges for both patients and hospitals. Being readmitted could increase the risk of complications for patients and introduce states of distress. For hospitals, readmissions present a strain on resources and their reputation. This project aims to develop a model that can predict whether a patient will be readmitted within 30 days of being discharged. After thorough data preprocessing and feature extraction, two models were trained on patient data from 2018 and tested on patient data from 2019 to determine predictive performance: a support vector machine (SVM) and a random forest (RF). Using Matthew's Correlation Coefficient to compare models, the RF model had the best performance with a coefficient of 0.75 while the SVM had a coefficient of 0.61. 
 
-bibliography: bibliography.bib
-
 header-includes: |
   %% Per the spinger doc, new theorem styles can be included using built in style, 
   %% but it seems the don't work so commented below
@@ -211,6 +209,10 @@ The figure also shows that there are 4 common readmission diagnoses that females
 \bmhead{Acknowledgments}
 
 We thank Dr. Anand K. Devaiah, Dean Kennedy, and Dr. Jessica R. Levi from the Boston University Chobanian & Avedisian School of Medicine for providing the objectives of this project, access to the data, and assistance with any questions we had throughout the project. We also thank Professor Masanao Yajima from Boston University MSSP for his guidance, support, and feedback throughout this process.
+
+\bmhead{Authors' Contributions}
+
+MP, AL, and FL wrote code for data cleaning, AL wrote code for and conducted exploratory data analysis, MP and AL wrote code for one-hot-encoding, MP conducted comorbidity analysis, FL wrote code for predictive models.
 
 ::: {.appendices latex=true}
 
