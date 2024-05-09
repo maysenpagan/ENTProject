@@ -109,6 +109,30 @@ The last step in preparing the data for modeling and analysis was to join the th
 
 # Exploratory Data Analysis {#sec3}
 
+```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Proportion of Readmissions in sample", fig.pos="H"}
+knitr::include_graphics("figures/AGE.png")
+```
+
+We have a class imbalance in our dataset, where the number of instances labeled as '1s' significantly exceeds those labeled as '0s', potentially leading to model biases, poor generalization, and challenges in decision-making during training and evaluation.
+In this specific situation, due to resource constraints and time limitations, we prioritized other aspects of the analysis pipeline that we deemed more critical for achieving our project objectives. However, we acknowledge the importance of addressing this imbalance in future iterations to enhance model robustness and accuracy.
+
+```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Distribution of Patient Ages by Readmission Status after Tracheostomy", fig.pos="H"}
+knitr::include_graphics("figures/AGE.png")
+```
+
+```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap=" Median Ages of Patients by Readmission Status after Tracheostomy ", fig.pos="H"}
+knitr::include_graphics("figures/AGE2.png")
+```
+
+The age distributions indicate a right skew, suggesting that older patients are more inclined to undergo tracheotomies. Notably, the median age for patients with readmissions is slightly lower compared to those without readmission. While the distributions for both groups share similarities, the peak in the distribution for patients with readmissions appears sharper, indicating a more concentrated age group, whereas the distribution for patients without readmission displays a broader spread across different age groups.
+
+```{r daysto, echo=FALSE, out.width = "100%", fig.align = "center", fig.cap="Proportion of Readmission Among APRDRG categories in the sample"", fig.pos="H"}
+knitr::include_graphics("figures/APRDRG.png")
+
+```
+
+In this figure, we observe variations in readmission proportions across different APRDRG categories. Some APRDRG categories exhibit a notably higher proportion of readmissions compared to others within the sample. Consequently, we opted to incorporate APRDRG as a predictor in our analysis to account for this observed variance.
+
 # Methods and Analysis {#sec4}
 
 In this section, we address and analyze the three objectives of this project.
