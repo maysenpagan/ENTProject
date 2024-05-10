@@ -1,0 +1,166 @@
+---
+title: "EDA code"
+author: "Aabha Latkar"
+date: "2024-05-10"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(tidyr)
+```
+
+#Distribution of AGE across patients who were Readmitted and Not Readmitted
+```{r}
+
+breaks <- seq(min(test$AGE), max(test$AGE), by = 5)
+labels <- seq(min(test$AGE), max(test$AGE), by = 5)
+ggplot(test, aes(x = AGE, fill = factor(ConditionMet))) +
+  geom_bar(position = "identity", alpha = 0.5) +
+  labs(x = "Age", y = "Frequency", fill = "Readmitted") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  scale_x_continuous(breaks = breaks, labels = labels)
+
+ggplot(test, aes(x = factor(ConditionMet), y = AGE)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(x = "Condition Met", y = "Age") +
+  theme_minimal()
+```
+
+
+#Readmission Status by Bed Size
+```{r}
+
+hospital$HOSP_NRD <- as.character(hospital$HOSP_NRD)
+testh <- left_join(test, hospital, by = "HOSP_NRD")
+ggplot(testh, aes(x = HOSP_BEDSIZE, fill = factor(ConditionMet))) +
+  geom_bar(position = "fill") +  # Change position to "fill"
+  labs(x = "Hospital Bedsize", y = "Proportion of Readmitted Patients", fill = "Readmitted") +
+  scale_fill_manual(values = c("maroon", "beige")) +
+  theme_minimal()
+
+
+```
+
+
+
+#Readmission status by Hospital
+```{r}
+
+# Calculate the frequency distribution of HOSP_NRD categories
+hosp_nrd_freq <- table(test$HOSP_NRD)
+# Sort the frequency distribution in descending order and show the top 20
+sorted_hosp_nrd_freq <- sort(hosp_nrd_freq, decreasing = TRUE)
+top_20_hosp_nrd_freq <- head(sorted_hosp_nrd_freq, 20)
+
+# Filter the dataset to include only the top 20 HOSP_NRD categories
+top_20_hosp_nrd <- head(sorted_hosp_nrd_freq, 20)
+filtered_test <- test %>% filter(HOSP_NRD %in% names(top_20_hosp_nrd))
+
+# Calculate proportions of ConditionMet=0 and ConditionMet=1 for each HOSP_NRD category
+proportions <- filtered_test %>%
+  group_by(HOSP_NRD, ConditionMet) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  pivot_wider(names_from = ConditionMet, values_from = proportion, names_prefix = "ConditionMet_") %>%
+  replace_na(list(ConditionMet_0 = 0, ConditionMet_1 = 0))  # Replace NA with 0
+
+# Plot the graph
+ggplot(proportions, aes(x = reorder(HOSP_NRD, desc(ConditionMet_1)), y = ConditionMet_1, fill = as.factor(ConditionMet_0))) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.8, fill = "darkblue", color = "white") +
+  labs(x = "Hospital", y = "Proportion of People Readmitted", fill = "ConditionMet") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+
+#Readmission by FEMALE
+```{r}
+
+ggplot(test, aes(x = factor(ConditionMet), fill = factor(ConditionMet))) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~ FEMALE) +
+  labs(title = "Distribution of FEM",
+       x = "FEMALE",
+       y = "Frequency") +
+  scale_fill_manual(values = c("blue", "red")) +  # Custom fill colors
+  theme_minimal()
+
+```
+
+
+#Graph for number of diagnosis
+```{r}
+
+# Histogram for I10_NDX
+ggplot(test, aes(x = I10_NDX, fill = factor(ConditionMet))) +
+  geom_bar(position = "identity", alpha = 0.5) +
+  labs(x = "Number of Diagnosis", y = "Frequency", fill = "Readmitted") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal()
+
+```
+
+
+
+#Graph for number of procedures
+```{r}
+
+ggplot(test, aes(x = I10_NPR, fill = factor(ConditionMet))) +
+  geom_bar(position = "identity", alpha = 0.5) +
+  labs(x = "Number of Procedures", y = "Frequency", fill = "Readmitted") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal()
+```
+
+
+
+#APRDRG graph
+```{r}
+
+# Calculate proportions of ConditionMet for each APRDRG category
+proportions <- tests %>%
+  group_by(APRDRG, ConditionMet) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  pivot_wider(names_from = ConditionMet, values_from = proportion, names_prefix = "ConditionMet_")
+
+# Sort APRDRG levels based on the proportion of ConditionMet=1
+sorted_levels <- proportions %>%
+  group_by(APRDRG) %>%
+  summarize(avg_conditionmet_1 = mean(ConditionMet_1, na.rm = TRUE)) %>%
+  arrange(avg_conditionmet_1) %>%
+  pull(APRDRG)
+
+# Reorder the APRDRG factor levels
+tests$APRDRG <- factor(tests$APRDRG, levels = sorted_levels)
+
+ggplot(tests, aes(x = APRDRG, fill = factor(ConditionMet))) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "Proportion", fill = "ConditionMet") +
+  scale_fill_manual(values = c("maroon", "turquoise")) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())  # Remove x-axis labels
+
+```
+
+
+
+#CLass Imbalance code
+```{r}
+#CLass Imbalance code
+class_counts <- data.frame(Class = c("0", "1"),
+                           Count = c(sum(test$ConditionMet == 0), sum(test$ConditionMet == 1)))
+
+# Create a bar plot
+ggplot(class_counts, aes(x = Class, y = Count)) +
+  geom_bar(stat = "identity", fill = "maroon", width = 0.5) +
+  labs(title = "Proportion of Readmissions in Sample",
+       x = "Readmitted",
+       y = "Count") +
+  theme_minimal()
+
+```
+
